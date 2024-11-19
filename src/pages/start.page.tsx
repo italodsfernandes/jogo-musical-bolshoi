@@ -27,7 +27,7 @@ export const StartPage = () => {
 
   return (
     <div className="space-y-6 text-center">
-      <h1 className="text-4xl font-bold text-purple-600">🎼 Jogo Musical 🎼</h1>
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-600">🎼 MusiQuiz 🎼</h1>
       <p className="text-lg text-gray-600">
         Teste seus conhecimentos sobre compositores clássicos!
       </p>

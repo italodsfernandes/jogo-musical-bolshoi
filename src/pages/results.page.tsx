@@ -31,7 +31,6 @@ export const ResultsPage = () => {
   }, [currentRound, navigate, playerName, resetGame]);
 
   useEffect(() => {
-    console.log(playerName, score);
     if (playerName && score !== undefined) {
       saveScore(playerName, score);
     }

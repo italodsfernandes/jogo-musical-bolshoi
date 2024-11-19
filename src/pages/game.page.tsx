@@ -53,7 +53,7 @@ const questions = [
   {
     id: "DEtuNQZQdTg",
     composer: "Debussy",
-    startTime: 0,
+    startTime: 14,
   },
   {
     id: "6bYdZo4MYEw",
@@ -63,12 +63,12 @@ const questions = [
   {
     id: "l4zkc7KEvYM",
     composer: "Rachmaninoff",
-    startTime: 0,
+    startTime: 50,
   },
   {
     id: "OSVSlddJMn8",
     composer: "P.I. Tchaikovsky",
-    startTime: 0,
+    startTime: 11,
   },
 ].sort(() => 0.5 - Math.random());
 
@@ -143,11 +143,12 @@ export const GamePage = () => {
     setIsAnswered(true);
     const correctAnswer = currentQuestion.composer;
 
-    const timeTaken =
-      ytPlayer?.getCurrentTime() - currentQuestion.startTime > 0
-        ? ytPlayer?.getCurrentTime() - currentQuestion.startTime
-        : 0;
-    const maxTime = videoDuration - currentQuestion.startTime || videoDuration;
+    const timeTaken = Math.max(
+      ytPlayer?.getCurrentTime() - currentQuestion.startTime,
+      0
+    );
+
+    const maxTime = Math.max(videoDuration - currentQuestion.startTime, 1);
 
     const points = Math.max(
       1000 - Math.floor((timeTaken / maxTime) * 1000),
@@ -221,12 +222,12 @@ export const GamePage = () => {
   ]);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-2">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-purple-600">
+        <h2 className="text-base  md:text-xl font-semibold text-purple-600">
           Rodada {currentRound}/{questions.length} 🎭
         </h2>
-        <span className="text-xl font-semibold text-green-600">
+        <span className="text-base md:text-xl font-semibold text-green-600">
           Pontos: {score} 🏆
         </span>
       </div>
@@ -252,14 +253,14 @@ export const GamePage = () => {
           onStateChange={onStateChange}
         />
         {answerFeedback && (
-          <div className="absolute inset-0 bg-yellow-100 z-10 text-center text-xl font-semibold text-yellow-600 flex items-center justify-center whitespace-pre-line">
+          <div className="absolute inset-0 bg-yellow-100 z-10 text-center text-base md:text-xl font-semibold text-yellow-600 flex items-center justify-center whitespace-pre-line">
             {answerFeedback}
           </div>
         )}
         <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-white h-16">
           <div className="bg-yellow-100 flex items-center justify-between gap-6 h-full p-8 text-yellow-600">
             <Music2Icon className="h-8 w-8 text-yellow-600 animate-bounce" />
-            <span className="text-xl font-semibold text-yellow-600 text-center ">
+            <span className="text-base md:text-xl font-semibold text-yellow-600 text-center ">
               Qual o compositor?
             </span>
             <Music2Icon className="h-8 w-8 text-yellow-600 animate-bounce" />
@@ -299,7 +300,7 @@ export const GamePage = () => {
             key={composer}
             onClick={() => handleAnswer(composer)}
             disabled={isAnswered || isLoadingNextRound}
-            className="bg-blue-500 hover:bg-blue-600 text-white text-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+            className="bg-blue-500 hover:bg-blue-600 text-white text-base md:text-xl transition-all duration-300 ease-in-out transform hover:scale-105"
           >
             {composer} <MusicIcon className="ml-2 h-5 w-5" />
           </Button>

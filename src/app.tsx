@@ -9,9 +9,9 @@ export const App = () => {
   return (
     <GameProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 flex flex-col">
-          <main className="flex-1 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 flex flex-col justify-center">
+          <main className="flex items-center justify-center p-2">
+            <div className="bg-white rounded-xl shadow-xl p-6 max-w-3xl w-full">
               <Routes>
                 <Route path="/" element={<StartPage />} />
                 <Route path="/game" element={<GamePage />} />
@@ -20,7 +20,7 @@ export const App = () => {
               </Routes>
             </div>
           </main>
-          <footer className="w-full py-4 text-center text-white bg-black/10 backdrop-blur-sm">
+          <footer className="flex items-center justify-center pb-2 w-full text-center backdrop-blur-sm">
             <p className="text-gray-600">
               Desenvolvido com 💜 por{" "}
               <a
