@@ -11,64 +11,74 @@ import {
 } from "lucide-react";
 import { SetStateAction, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import YouTube from "react-youtube";
+import YouTube, { YouTubeEvent } from "react-youtube";
 
 const questions = [
-  { id: "-c1htjAp5nY", composer: "Leo Delibes", startTime: 7 },
   {
-    id: "9aLyyhi_RvU",
-    composer: "Camille Saint-Saens",
-    startTime: 45,
-  },
-  {
-    id: "1prweT95Mo0",
-    composer: "Johann Sebastian Bach",
-    startTime: 8,
-  },
-  {
-    id: "YuBeBjqKSGQ",
-    composer: "Amadeus Mozart",
+    id: "I_AX4R-d29o",
+    composer: "Wolfgang Amadeus Mozart",
+    music: "piano sonata n°16 k.545",
     startTime: 0,
   },
   {
-    id: "SSypujlLlNI",
+    id: "pOT1T2qSd2M",
     composer: "Ludwig Van Beethoven",
+    music: "Sonata op.27 n°2 - Moonlight Sonata",
     startTime: 0,
   },
   {
-    id: "CmaxDQbA0C0",
-    composer: "L. a. minkus",
+    id: "_RmuTuVWXy4",
+    composer: "Robert Schumann",
+    music: "traumerei - Cenas Infantis op.15 n°7",
     startTime: 0,
   },
   {
-    id: "SyDo3h1Tu7c",
-    composer: "Prokofiev",
+    id: "kkq_3CrvFUM",
+    composer: "Franz Liszt",
+    music: "La Campanella",
     startTime: 0,
   },
   {
-    id: "DoLzZmqOGh8",
-    composer: "Adolph Adam",
+    id: "BWerj8FcprM",
+    composer: "Piotr Ilitch Tchaikovski",
+    music: "Concerto para piano e orquestra n°1",
     startTime: 0,
   },
   {
-    id: "DEtuNQZQdTg",
-    composer: "Debussy",
-    startTime: 14,
+    id: "c977QdbTImU",
+    composer: "Claude Debussy",
+    music: "Clair de lune",
+    startTime: 0,
+  },
+  {
+    id: "Fxk9qwCFf8s",
+    composer: "Scott Joplin",
+    music: "The Entertainer",
+    startTime: 0,
+  },
+  {
+    id: "ievpSwyvxoE",
+    composer: "Felix Mendelssohn",
+    music: "Canções sem Palavras Op.67 n°2",
+    startTime: 0,
+  },
+  {
+    id: "LUp2u9wI1fY",
+    composer: "Franz Schubert",
+    music: "impromptu op.90 n°3",
+    startTime: 0,
   },
   {
     id: "6bYdZo4MYEw",
-    composer: "Chopin",
+    composer: "Frédéric Chopin",
+    music: "Fantaisie-Impromptu",
     startTime: 0,
   },
   {
-    id: "l4zkc7KEvYM",
-    composer: "Rachmaninoff",
-    startTime: 50,
-  },
-  {
-    id: "OSVSlddJMn8",
-    composer: "P.I. Tchaikovsky",
-    startTime: 11,
+    id: "mKsAypz6Ou8",
+    composer: "Johann Sebastian Bach",
+    music: "Preludio e Fuga em Dó maior BWV 846",
+    startTime: 0,
   },
 ].sort(() => 0.5 - Math.random());
 
@@ -87,8 +97,8 @@ export const GamePage = () => {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [ytPlayer, setYtPlayer] = useState<any>(null);
+
+  const [ytPlayer, setYtPlayer] = useState<YT.Player | null>(null);
   const [answerFeedback, setAnswerFeedback] = useState<React.ReactNode>("");
   const [options, setOptions] = useState<string[]>([]);
   const [isLoadingNextRound, setIsLoadingNextRound] = useState(false);
@@ -99,7 +109,7 @@ export const GamePage = () => {
   const togglePlay = () => {
     if (ytPlayer) {
       if (isPlaying) {
-        ytPlayer.pauseVideo();
+        ytPlayer?.pauseVideo();
       } else {
         ytPlayer.playVideo();
       }
@@ -107,11 +117,15 @@ export const GamePage = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const onReady = (event: {
-    target: { getDuration: () => SetStateAction<number> };
-  }) => {
+  const onReady = (event: YouTubeEvent) => {
     setYtPlayer(event.target);
     setVideoDuration(event.target.getDuration());
+
+    event.target.playVideo();
+
+    setTimeout(() => {
+      event.target.unMute();
+    }, 500);
   };
 
   const onStateChange = (event: {
@@ -144,7 +158,7 @@ export const GamePage = () => {
     const correctAnswer = currentQuestion.composer;
 
     const timeTaken = Math.max(
-      ytPlayer?.getCurrentTime() - currentQuestion.startTime,
+      (ytPlayer ? ytPlayer.getCurrentTime() : 0) - currentQuestion.startTime,
       0
     );
 
@@ -159,9 +173,12 @@ export const GamePage = () => {
       setScore(score + points);
       setAnswerFeedback(
         <div className="flex items-center flex-col">
-          <div className="flex items-center">
-            <CheckIcon className="h-8 w-8 mr-2 text-green-600" />
-            <span>Resposta correta! 🎉</span>
+          <div className="flex items-center flex-col">
+            <div className="flex items-center">
+              <CheckIcon className="h-8 w-8 mr-2 text-green-600" />
+              <span>Resposta correta! 🎉</span>
+            </div>
+            <span>{currentQuestion.music}</span>
           </div>
           <span>+ {points} pontos</span>
         </div>
@@ -169,11 +186,12 @@ export const GamePage = () => {
     } else {
       setAnswerFeedback(
         <div className="flex items-center flex-col">
-          <div className="flex items-center">
+          <div className="flex items-center ">
             <XIcon className="h-8 w-8 mr-2 text-red-600" />
             <span>Resposta errada! 😔</span>
           </div>
           <span>A resposta correta era {correctAnswer}.</span>
+          <span>{currentQuestion.music}</span>
         </div>
       );
     }
@@ -207,7 +225,7 @@ export const GamePage = () => {
               navigate("/results");
             }
           }
-          return prevProgress + 10;
+          return prevProgress + 5;
         });
       }, 200);
 
@@ -232,32 +250,30 @@ export const GamePage = () => {
         </span>
       </div>
 
-      <div className="relative  rounded-lg overflow-hidden border-8 border-yellow-600">
-        <YouTube
-          videoId={currentQuestion.id}
-          opts={{
-            width: "100%",
-            playerVars: {
-              autoplay: 1,
-              controls: 0,
-              modestbranding: 1,
-              rel: 0,
-              fs: 0,
-              iv_load_policy: 3,
-              cc_load_policy: 0,
-              enablejsapi: 1,
-              start: currentQuestion.startTime,
-            },
-          }}
-          onReady={onReady}
-          onStateChange={onStateChange}
-        />
-        {answerFeedback && (
-          <div className="absolute inset-0 bg-yellow-100 z-10 text-center text-base md:text-xl font-semibold text-yellow-600 flex items-center justify-center whitespace-pre-line">
-            {answerFeedback}
-          </div>
-        )}
-        <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-white h-16">
+      <div className="relative  rounded-lg overflow-hidden border-8 border-yellow-600 h-32">
+        <div className="hidden">
+          <YouTube
+            videoId={currentQuestion.id}
+            opts={{
+              width: "100%",
+              playerVars: {
+                autoplay: 1,
+                mute: 1,
+                controls: 0,
+                modestbranding: 1,
+                rel: 0,
+                fs: 0,
+                iv_load_policy: 3,
+                cc_load_policy: 0,
+                enablejsapi: 1,
+                start: currentQuestion.startTime,
+              },
+            }}
+            onReady={onReady}
+            onStateChange={onStateChange}
+          />
+        </div>
+        <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-white h-16 z-10">
           <div className="bg-yellow-100 flex items-center justify-between gap-6 h-full p-8 text-yellow-600">
             <Music2Icon className="h-8 w-8 text-yellow-600 animate-bounce" />
             <span className="text-base md:text-xl font-semibold text-yellow-600 text-center ">
@@ -266,7 +282,11 @@ export const GamePage = () => {
             <Music2Icon className="h-8 w-8 text-yellow-600 animate-bounce" />
           </div>
         </div>
-        <div className="absolute inset-0 bg-black bg-opacity-0" />
+        <div
+          className={`absolute inset-0 bg-black transition duration-1000 ${
+            isPlaying ? "bg-opacity-0" : "bg-opacity-100"
+          }`}
+        />
         <div className="absolute bottom-0 left-0 right-0 bg-yellow-100 text-white h-16">
           <div className="bg-yellow-100 rounded-lg p-4 flex items-center justify-center">
             <Button
@@ -285,6 +305,12 @@ export const GamePage = () => {
         </div>
       </div>
 
+      {answerFeedback && (
+        <div className="bg-yellow-100 text-center text-base md:text-xl font-semibold text-yellow-600 flex items-center justify-center whitespace-pre-line">
+          {answerFeedback}
+        </div>
+      )}
+
       {isLoadingNextRound && (
         <Progress value={loadingProgress} className="w-full h-2 bg-gray-200">
           <div
@@ -299,7 +325,7 @@ export const GamePage = () => {
           <Button
             key={composer}
             onClick={() => handleAnswer(composer)}
-            disabled={isAnswered || isLoadingNextRound}
+            disabled={isAnswered || isLoadingNextRound || !isPlaying}
             className="bg-blue-500 hover:bg-blue-600 text-white text-base md:text-xl transition-all duration-300 ease-in-out transform hover:scale-105"
           >
             {composer} <MusicIcon className="ml-2 h-5 w-5" />

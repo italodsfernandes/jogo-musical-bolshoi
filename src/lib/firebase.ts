@@ -26,7 +26,7 @@ const app =
 const db = getDatabase(app);
 
 export const saveScore = (playerName: string, score: number) => {
-  const scoreRef = ref(db, "scores/" + playerName);
+  const scoreRef = ref(db, "scores202503/" + playerName);
 
   set(scoreRef, {
     name: playerName,
@@ -48,7 +48,7 @@ export interface PlayerScore {
 export const fetchLeaderBoard = async () => {
   const db = getDatabase();
   const leaderboardRef = query(
-    ref(db, "scores"),
+    ref(db, "scores202503"),
     orderByChild("score"),
     limitToLast(10)
   );
