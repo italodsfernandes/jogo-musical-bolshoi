@@ -112,6 +112,7 @@ export const GamePage = () => {
         ytPlayer?.pauseVideo();
       } else {
         ytPlayer.playVideo();
+        ytPlayer.unMute();
       }
     }
     setIsPlaying(!isPlaying);
