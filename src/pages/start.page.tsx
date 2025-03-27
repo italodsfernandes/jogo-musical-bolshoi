@@ -31,8 +31,8 @@ export const StartPage = () => {
         🎼 MusiQuiz 🎼
       </h1>
       <p className="text-lg text-gray-600">
-        Teste seus conhecimentos sobre compositores classicos com algumas das
-        musicas mais tradicionais do repertório pianistico
+        Teste seus conhecimentos sobre compositores clássicos com algumas das
+        músicas mais tradicionais do repertório pianístico.
       </p>
       <Input
         type="text"
