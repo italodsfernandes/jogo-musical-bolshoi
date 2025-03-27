@@ -18,7 +18,7 @@ const questions = [
     id: "I_AX4R-d29o",
     composer: "Wolfgang Amadeus Mozart",
     music: "piano sonata n°16 k.545",
-    startTime: 0,
+    startTime: 7,
   },
   {
     id: "pOT1T2qSd2M",
@@ -36,7 +36,7 @@ const questions = [
     id: "kkq_3CrvFUM",
     composer: "Franz Liszt",
     music: "La Campanella",
-    startTime: 0,
+    startTime: 7,
   },
   {
     id: "BWerj8FcprM",
@@ -48,7 +48,7 @@ const questions = [
     id: "c977QdbTImU",
     composer: "Claude Debussy",
     music: "Clair de lune",
-    startTime: 0,
+    startTime: 2,
   },
   {
     id: "Fxk9qwCFf8s",
@@ -65,8 +65,8 @@ const questions = [
   {
     id: "LUp2u9wI1fY",
     composer: "Franz Schubert",
-    music: "impromptu op.90 n°3",
-    startTime: 0,
+    music: "IPROMPTU op.90 n°3",
+    startTime: 3,
   },
   {
     id: "6bYdZo4MYEw",
@@ -78,7 +78,7 @@ const questions = [
     id: "mKsAypz6Ou8",
     composer: "Johann Sebastian Bach",
     music: "Preludio e Fuga em Dó maior BWV 846",
-    startTime: 0,
+    startTime: 22,
   },
 ].sort(() => 0.5 - Math.random());
 
