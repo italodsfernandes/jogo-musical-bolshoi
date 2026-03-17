@@ -208,16 +208,20 @@ export const StartExperience = ({
     });
   };
 
+  const nameParts = normalizeStudentName(playerInput);
+  const hasFullName = nameParts.split(" ").filter(Boolean).length >= 2;
   const inputMode = playerInput.trim()
     ? isDigitsOnly(playerInput)
       ? "student"
-      : "visitor"
+      : hasFullName
+        ? "visitor"
+        : "neutral"
     : "neutral";
 
   const normalizedRegistration = normalizeRegistration(playerInput);
   const normalizedVisitorName = normalizeStudentName(playerInput);
   const isStudentInputValid = normalizedRegistration.length > 0;
-  const isVisitorInputValid = normalizedVisitorName.length >= 2;
+  const isVisitorInputValid = hasFullName && normalizedVisitorName.length >= 2;
   const canLookup =
     inputMode === "student"
       ? isStudentInputValid
@@ -227,7 +231,9 @@ export const StartExperience = ({
 
   const instantHint =
     inputMode === "neutral"
-      ? "Matrícula pra competir como aluno ou nome pra entrar como visitante."
+      ? playerInput.trim()
+        ? "Para visitante, digite nome e sobrenome."
+        : "Digite matrícula ou nome e sobrenome."
       : inputMode === "student"
         ? isStudentInputValid
           ? "Aperta Enter pra validar."
@@ -239,8 +245,14 @@ export const StartExperience = ({
   const lookupActionLabel = "Entrar";
 
   const handleLookup = () => {
+    if (inputMode === "neutral") {
+      setLookupError("Digite matrícula ou nome e sobrenome.");
+      setErrorShake((value) => value + 1);
+      return;
+    }
+
     startTransition(() => {
-      if (isDigitsOnly(playerInput)) {
+      if (inputMode === "student") {
         void lookupRegistration(playerInput);
         return;
       }
@@ -366,7 +378,7 @@ export const StartExperience = ({
                 </p>
                 <Input
                   id="registration"
-                  inputMode={inputMode === "student" ? "numeric" : "text"}
+                  inputMode="text"
                   placeholder="Matrícula ou seu nome"
                   value={playerInput}
                   onChange={(event) => {
