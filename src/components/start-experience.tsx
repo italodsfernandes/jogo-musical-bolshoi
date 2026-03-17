@@ -72,7 +72,7 @@ export const StartExperience = ({
   const router = useRouter();
   const {
     state,
-    actions: { setPlayer, beginGame, resetGame },
+    actions: { setPlayer, beginGame, resetGame, clearPlayer },
   } = useGameSession();
   const [playerInput, setPlayerInput] = useState(
     initialRegistration || state.registration,
@@ -354,6 +354,7 @@ export const StartExperience = ({
                 <button
                   type="button"
                   onClick={() => {
+                    clearPlayer();
                     setLookupError(null);
                     setResolvedPlayer(null);
                     setPlayerInput(

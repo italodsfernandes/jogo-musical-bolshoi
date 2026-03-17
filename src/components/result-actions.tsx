@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { useGameSession } from "@/features/game/use-game-session";
 import { PlayerType } from "@/features/game/types";
 import {
   SHARE_FEEDBACK_TIMEOUT_MS,
@@ -33,6 +34,9 @@ export const ResultActions = ({
   shareUrl: string;
 }) => {
   const router = useRouter();
+  const {
+    actions: { resetGame },
+  } = useGameSession();
   const [isSharing, setIsSharing] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<
     "idle" | "shared" | "copied"
@@ -89,11 +93,12 @@ export const ResultActions = ({
       <Button
         size="lg"
         className="col-span-2"
-        onClick={() =>
+        onClick={() => {
+          resetGame();
           router.push(
             playerType === "student" ? `/?registration=${registration}` : "/",
-          )
-        }
+          );
+        }}
       >
         <HouseIcon className="h-4 w-4" />
         Jogar novamente
