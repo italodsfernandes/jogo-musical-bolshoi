@@ -5,6 +5,7 @@ import {
   createAnswerOptions,
   normalizeRegistration,
 } from "@/features/game/scoring";
+import { QUESTIONS } from "@/features/game/questions";
 
 describe("game scoring", () => {
   it("normalizes registration to digits only", () => {
@@ -148,33 +149,53 @@ describe("game scoring", () => {
     });
   });
 
-  it("creates 4 unique answer options even when the composer list has duplicates", () => {
-    const options = createAnswerOptions(
-      "Piotr Ilitch Tchaikovski",
-      [
-        "Piotr Ilitch Tchaikovski",
-        "Maurice Ravel",
-        "Heitor Villa-Lobos",
-        "Carl Orff",
-        "Piotr Ilitch Tchaikovski",
-        "Antonio Vivaldi",
-      ]
-    );
+  it("always includes the correct question by id", () => {
+    const currentQuestion = QUESTIONS[0];
+    const options = createAnswerOptions(currentQuestion.id, QUESTIONS);
 
-    expect(options).toHaveLength(4);
-    expect(new Set(options).size).toBe(4);
-    expect(options).toContain("Piotr Ilitch Tchaikovski");
+    expect(options.some((option) => option.id === currentQuestion.id)).toBe(
+      true
+    );
   });
 
-  it("limits options to the available unique composers", () => {
-    const options = createAnswerOptions("Maurice Ravel", [
-      "Maurice Ravel",
-      "Maurice Ravel",
-      "Carl Orff",
-      "Heitor Villa-Lobos",
-    ]);
+  it("keeps the exact current question when composer is repeated (Tchaikovsky)", () => {
+    const currentQuestion = QUESTIONS.find(
+      (question) => question.id === "tchaikovsky-piano-concerto-1"
+    );
+
+    expect(currentQuestion).toBeDefined();
+
+    const options = createAnswerOptions(currentQuestion!.id, QUESTIONS);
+
+    expect(
+      options.some(
+        (option) =>
+          option.id === currentQuestion!.id &&
+          option.music === currentQuestion!.music &&
+          option.composer === currentQuestion!.composer
+      )
+    ).toBe(true);
+  });
+
+  it("does not duplicate ids in the options list", () => {
+    const currentQuestion = QUESTIONS[0];
+    const duplicatedPool = [
+      ...QUESTIONS,
+      QUESTIONS[1],
+      QUESTIONS[2],
+      QUESTIONS[3],
+    ];
+
+    const options = createAnswerOptions(currentQuestion.id, duplicatedPool);
+    const optionIds = options.map((option) => option.id);
+
+    expect(new Set(optionIds).size).toBe(optionIds.length);
+  });
+
+  it("limits options to the total available unique questions", () => {
+    const uniqueSmallPool = [QUESTIONS[0], QUESTIONS[1], QUESTIONS[2]];
+    const options = createAnswerOptions(QUESTIONS[0].id, uniqueSmallPool);
 
     expect(options).toHaveLength(3);
-    expect(new Set(options).size).toBe(3);
   });
 });

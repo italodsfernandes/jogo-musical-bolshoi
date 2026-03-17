@@ -1,4 +1,4 @@
-import { AnswerBreakdown } from "@/features/game/types";
+import { AnswerBreakdown, Question } from "@/features/game/types";
 
 const BASE_CORRECT_SCORE = 500;
 const MAX_SPEED_BONUS = 300;
@@ -36,18 +36,28 @@ export const buildQuestionOrder = (questionIds: string[]) =>
   shuffleArray(questionIds);
 
 export const createAnswerOptions = (
-  currentComposer: string,
-  allComposers: string[],
+  currentQuestionId: string,
+  allQuestions: Question[],
   optionCount = 4
-) => {
-  const uniqueComposers = Array.from(new Set(allComposers));
-  const otherComposers = shuffleArray(
-    uniqueComposers.filter((composer) => composer !== currentComposer)
+): Question[] => {
+  const currentQuestion = allQuestions.find(
+    (question) => question.id === currentQuestionId
   );
 
+  if (!currentQuestion) {
+    return [];
+  }
+
+  const uniqueOtherQuestionsById = new Map(
+    allQuestions
+      .filter((question) => question.id !== currentQuestionId)
+      .map((question) => [question.id, question])
+  );
+  const otherQuestions = shuffleArray([...uniqueOtherQuestionsById.values()]);
+
   return shuffleArray([
-    currentComposer,
-    ...otherComposers.slice(0, optionCount - 1),
+    currentQuestion,
+    ...otherQuestions.slice(0, optionCount - 1),
   ]);
 };
 

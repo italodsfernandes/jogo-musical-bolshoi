@@ -7,13 +7,18 @@ import {
   Share2Icon,
   TrophyIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { PlayerType } from "@/features/game/types";
+import {
+  SHARE_FEEDBACK_TIMEOUT_MS,
+  shareResultWithFallback,
+} from "@/lib/share";
 
 export const ResultActions = ({
+  sessionId,
   registration,
   playerType,
   studentName,
@@ -29,36 +34,29 @@ export const ResultActions = ({
 }) => {
   const router = useRouter();
   const [isSharing, setIsSharing] = useState(false);
-  const [shareFeedback, setShareFeedback] = useState<"idle" | "done">("idle");
-  const shareText = useMemo(
-    () =>
-      `Fiz ${score} pts no MusiQuiz Piano Day 🎹 Será que você bate? ${shareUrl}`,
-    [score, shareUrl],
-  );
+  const [shareFeedback, setShareFeedback] = useState<
+    "idle" | "shared" | "copied"
+  >("idle");
 
   const handleShare = async () => {
     setIsSharing(true);
 
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Resultado de ${studentName} no Piano Day`,
-          text: shareText,
-          url: shareUrl,
-        });
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareText);
-      } else {
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(shareText)}`,
-          "_blank",
-        );
+      const result = await shareResultWithFallback({
+        sessionId,
+        studentName,
+        score,
+        shareUrl,
+      });
+
+      if (result.status === "cancelled" || result.status === "failed") {
+        return;
       }
 
-      setShareFeedback("done");
+      setShareFeedback(result.status === "copied" ? "copied" : "shared");
       window.setTimeout(() => {
         setShareFeedback("idle");
-      }, 1800);
+      }, SHARE_FEEDBACK_TIMEOUT_MS);
     } finally {
       setIsSharing(false);
     }
@@ -69,12 +67,16 @@ export const ResultActions = ({
       <Button size="lg" onClick={handleShare} disabled={isSharing}>
         {isSharing ? (
           <LoaderCircleIcon className="h-4 w-4 animate-spin" />
-        ) : shareFeedback === "done" ? (
+        ) : shareFeedback !== "idle" ? (
           <CheckIcon className="h-4 w-4" />
         ) : (
           <Share2Icon className="h-4 w-4" />
         )}
-        {shareFeedback === "done" ? "Copiado!" : "Compartilhar"}
+        {shareFeedback === "shared"
+          ? "Compartilhado!"
+          : shareFeedback === "copied"
+            ? "Copiado!"
+            : "Compartilhar card"}
       </Button>
       <Button
         size="lg"

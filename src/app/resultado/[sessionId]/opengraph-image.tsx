@@ -1,13 +1,12 @@
 import { ImageResponse } from "next/og";
-import QRCode from "qrcode";
 
 import { getResultSnapshot } from "@/lib/firebase";
 
 export const runtime = "nodejs";
-export const alt = "Card de resultado do Piano Day MusiQuiz";
+export const alt = "Card de resultado do Piano Day Bolshoi";
 export const size = {
-  width: 1200,
-  height: 630,
+  width: 1080,
+  height: 1080,
 };
 export const contentType = "image/png";
 
@@ -20,35 +19,50 @@ interface OgImageProps {
 export default async function OgImage({ params }: OgImageProps) {
   const { sessionId } = await params;
   const result = await getResultSnapshot(sessionId).catch(() => null);
+
   const displayName = result?.studentName
     ? result.studentName.length > 22
       ? `${result.studentName.slice(0, 22)}...`
       : result.studentName
-    : "Aluno";
+    : "Jogador";
+
   const displayTitle = result?.title
     ? result.title.length > 26
       ? `${result.title.slice(0, 26)}...`
       : result.title
     : "Resultado especial";
-  const positionLabel =
-    result?.position === 1
-      ? "🥇 1º lugar"
-      : result?.position === 2
-        ? "🥈 2º lugar"
-        : result?.position === 3
-          ? "🥉 3º lugar"
-          : `#${result?.position ?? "--"}`;
-  const playerBadge =
-    result?.playerType === "student" ? "Aluno Bolshoi 🎓" : "Visitante 🎵";
-  const qrCode = result?.shareUrl
-    ? await QRCode.toDataURL(result.shareUrl, {
-        margin: 1,
-        color: {
-          dark: "#052B2C",
-          light: "#FCFBF7",
-        },
-      })
-    : null;
+
+  const whiteKeyCount = 26;
+  const whiteKeys = Array.from({ length: whiteKeyCount });
+  const blackKeyPattern = [1, 2, 4, 5, 6];
+  const blackKeys = Array.from({ length: 4 }).flatMap((_, octave) =>
+    blackKeyPattern
+      .map((offset) => octave * 7 + offset)
+      .filter((index) => index < whiteKeyCount),
+  );
+
+  const headerLabelStyle = {
+    fontFamily: "sans-serif",
+    letterSpacing: "0.24em",
+    textTransform: "uppercase" as const,
+    fontWeight: 700,
+    color: "rgba(176,148,90,0.86)",
+    background: "rgba(176,148,90,0.08)",
+    border: "1px solid rgba(176,148,90,0.22)",
+    borderRadius: 999,
+    padding: "8px 16px",
+    display: "flex",
+    alignItems: "center",
+  };
+
+  const brandLabelStyle = {
+    ...headerLabelStyle,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    fontWeight: 600,
+    color: "rgba(176,148,90,0.78)",
+    padding: "8px 14px",
+  };
 
   return new ImageResponse(
     <div
@@ -56,213 +70,259 @@ export default async function OgImage({ params }: OgImageProps) {
         height: "100%",
         width: "100%",
         display: "flex",
-        flexDirection: "column",
         background:
-          "radial-gradient(circle at top, rgba(200,166,70,0.22), transparent 40%), linear-gradient(180deg, #FCFBF7 0%, #F5F4EF 100%)",
-        color: "#142022",
-        padding: "48px",
+          "radial-gradient(circle at top, rgba(176,148,90,0.12), transparent 34%), linear-gradient(160deg, #0C3E3F 0%, #062E2F 48%, #031E1F 100%)",
+        color: "#FCFBF7",
         fontFamily: "Georgia, serif",
+        position: "relative",
+        overflow: "hidden",
+        padding: 62,
       }}
     >
-      {/* ── Top bar ── */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 24,
+          borderRadius: 34,
+          border: "1px solid rgba(176,148,90,0.14)",
+          display: "flex",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          top: -126,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 420,
+          height: 420,
+          borderRadius: 999,
+          background:
+            "radial-gradient(circle, rgba(176,148,90,0.14) 0%, transparent 70%)",
+          display: "flex",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: -150,
+          left: -120,
+          width: 420,
+          height: 420,
+          borderRadius: 999,
+          background:
+            "radial-gradient(circle, rgba(176,148,90,0.07) 0%, transparent 70%)",
+          display: "flex",
+        }}
+      />
+
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          flexDirection: "column",
           alignItems: "center",
+          justifyContent: "space-between",
+          flex: 1,
+          position: "relative",
+          paddingBottom: 66,
         }}
       >
         <div
           style={{
             display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ ...headerLabelStyle, fontSize: 16 }}>Piano Day</span>
+          </div>
+
+          <span style={{ ...brandLabelStyle, fontSize: 16 }}>
+            Escola do Teatro Bolshoi no Brasil
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
             flexDirection: "column",
-            gap: 4,
+            alignItems: "center",
+            width: "100%",
+            marginTop: 34,
           }}
         >
           <span
             style={{
               fontSize: 18,
-              letterSpacing: "0.24em",
+              letterSpacing: "0.28em",
               textTransform: "uppercase",
               fontFamily: "sans-serif",
-              opacity: 0.6,
+              color: "rgba(176,148,90,0.5)",
+              fontWeight: 600,
             }}
           >
-            Piano Day • {playerBadge}
+            Conquista
           </span>
-          <span style={{ fontSize: 52, fontWeight: 700 }}>
-            MusiQuiz Grand Finale
-          </span>
-        </div>
-        <div
-          style={{
-            borderRadius: 999,
-            border: "2px solid rgba(200,166,70,0.45)",
-            padding: "12px 22px",
-            fontSize: 22,
-            maxWidth: 340,
-            textAlign: "center",
-            fontFamily: "sans-serif",
-          }}
-        >
-          {displayTitle}
-        </div>
-      </div>
 
-      {/* ── Cards row ── */}
-      <div
-        style={{
-          marginTop: 36,
-          display: "flex",
-          gap: 32,
-          flex: 1,
-        }}
-      >
-        {/* Left card */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            flex: 1,
-            borderRadius: 36,
-            border: "2px solid rgba(200,166,70,0.36)",
-            background: "rgba(252,251,247,0.92)",
-            padding: 40,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <span
-              style={{
-                fontSize: 18,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                fontFamily: "sans-serif",
-                opacity: 0.5,
-              }}
-            >
-              Performance de
-            </span>
-            <span style={{ fontSize: 58, fontWeight: 700, lineHeight: 1.05 }}>
-              {displayName}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", gap: 48 }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
-                style={{
-                  fontSize: 16,
-                  fontFamily: "sans-serif",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  opacity: 0.6,
-                }}
-              >
-                Pontos
-              </span>
-              <span style={{ fontSize: 110, fontWeight: 700, lineHeight: 1 }}>
-                {result?.score ?? "--"}
-              </span>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 16,
-                  fontFamily: "sans-serif",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  opacity: 0.6,
-                }}
-              >
-                Lugar
-              </span>
-              <span
-                style={{
-                  fontSize: 48,
-                  fontWeight: 700,
-                  fontFamily: "sans-serif",
-                }}
-              >
-                {positionLabel}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right dark card */}
-        <div
-          style={{
-            width: 292,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            gap: 20,
-            borderRadius: 36,
-            background: "#052B2C",
-            color: "#FCFBF7",
-            padding: "28px 24px",
-          }}
-        >
-          <div
+          <span
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
+              marginTop: 14,
+              fontSize: 52,
+              lineHeight: 1.02,
+              fontWeight: 700,
+              color: "#EAD7A8",
+              maxWidth: 780,
+              textAlign: "center",
+            }}
+          >
+            {displayTitle}
+          </span>
+
+          <span
+            style={{
+              fontSize: 18,
+              letterSpacing: "0.28em",
+              textTransform: "uppercase",
               fontFamily: "sans-serif",
+              color: "rgba(176,148,90,0.5)",
+              fontWeight: 600,
+              marginTop: 58,
             }}
           >
-            <span
-              style={{
-                fontSize: 16,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                opacity: 0.55,
-              }}
-            >
-              Piano Day 🎹
-            </span>
-            <span style={{ fontSize: 26, lineHeight: 1.25, fontWeight: 600 }}>
-              Veja o placar completo.
-            </span>
-          </div>
+            Performance de
+          </span>
+
+          <span
+            style={{
+              fontSize: 64,
+              fontWeight: 700,
+              lineHeight: 1,
+              color: "#FCFBF7",
+              marginTop: 10,
+              textAlign: "center",
+              maxWidth: 820,
+            }}
+          >
+            {displayName}
+          </span>
+
+          <div
+            style={{
+              width: 80,
+              height: 2,
+              background:
+                "linear-gradient(90deg, rgba(176,148,90,0), #B0945A, rgba(176,148,90,0))",
+              borderRadius: 2,
+              marginTop: 18,
+              display: "flex",
+            }}
+          />
 
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 14,
               alignItems: "center",
+              marginTop: 20,
             }}
           >
-            {qrCode ? (
-              <img
-                alt="QR Code do resultado"
-                src={qrCode}
-                width={210}
-                height={210}
-                style={{ borderRadius: 20 }}
-              />
-            ) : null}
             <span
               style={{
-                textAlign: "center",
-                fontSize: 15,
-                opacity: 0.5,
-                fontFamily: "sans-serif",
-                letterSpacing: "0.04em",
+                fontSize: 250,
+                fontWeight: 700,
+                lineHeight: 0.85,
+                color: "#B0945A",
+                letterSpacing: "-0.055em",
+                textShadow: "0 2px 20px rgba(176,148,90,0.25)",
               }}
             >
-              musiquiz.bolshoi
+              {result?.score ?? "--"}
             </span>
+            <span
+              style={{
+                fontSize: 14,
+                letterSpacing: "0.28em",
+                textTransform: "uppercase",
+                fontFamily: "sans-serif",
+                color: "rgba(176,148,90,0.5)",
+                fontWeight: 600,
+                marginTop: 10,
+              }}
+            >
+              pontos
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 32,
+          }}
+        ></div>
+
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-end",
+            height: 46,
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: 836,
+              height: 42,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <div style={{ display: "flex", gap: 2, alignItems: "flex-end" }}>
+              {whiteKeys.map((_, index) => (
+                <div
+                  key={`white-${index}`}
+                  style={{
+                    width: 30,
+                    height: 42,
+                    borderRadius: "0 0 6px 6px",
+                    background:
+                      "linear-gradient(180deg, rgba(252,251,247,0.1), rgba(252,251,247,0.06))",
+                    border: "1px solid rgba(252,251,247,0.07)",
+                    display: "flex",
+                  }}
+                />
+              ))}
+            </div>
+
+            {blackKeys.map((position, index) => (
+              <div
+                key={`black-${index}`}
+                style={{
+                  position: "absolute",
+                  left: position * 32 - 10,
+                  top: 0,
+                  width: 20,
+                  height: 24,
+                  borderRadius: "0 0 5px 5px",
+                  background:
+                    "linear-gradient(180deg, rgba(176,148,90,0.2), rgba(176,148,90,0.12))",
+                  border: "1px solid rgba(176,148,90,0.2)",
+                  display: "flex",
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>

@@ -29,8 +29,9 @@ export interface AnswerBreakdown {
 export interface AnswerResult {
   status: "correct" | "wrong";
   correctComposer: string;
-  music: string;
+  correctMusic: string;
   selectedComposer: string;
+  selectedMusic: string;
   breakdown: AnswerBreakdown;
   streak: number;
 }

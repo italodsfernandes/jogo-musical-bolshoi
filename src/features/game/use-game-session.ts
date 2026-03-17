@@ -16,8 +16,9 @@ export interface GameSessionContextValue {
     beginGame: () => void;
     submitAnswer: (payload: {
       selectedComposer: string;
+      selectedMusic: string;
       correctComposer: string;
-      music: string;
+      correctMusic: string;
       breakdown: AnswerBreakdown;
     }) => void;
     advanceFlow: () => void;

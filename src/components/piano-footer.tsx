@@ -15,6 +15,7 @@ const KEYS = [
   { note: "A4", type: "white", freq: 440.0 },
   { note: "As4", type: "black", freq: 466.16 },
   { note: "B4", type: "white", freq: 493.88 },
+  { note: "C5", type: "white", freq: 523.25 },
 ] as const;
 
 export function PianoFooter() {

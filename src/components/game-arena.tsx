@@ -16,7 +16,7 @@ import {
 } from "@/features/game/scoring";
 import { useHowlerPlayer } from "@/features/game/use-howler-player";
 import { useGameSession } from "@/features/game/use-game-session";
-import { PersistedResultResponse } from "@/features/game/types";
+import { PersistedResultResponse, Question } from "@/features/game/types";
 
 const REVEAL_DELAY_MS = 2300;
 
@@ -50,23 +50,13 @@ export const GameArena = () => {
   const currentQuestion = state.currentQuestionId
     ? (QUESTIONS_BY_ID.get(state.currentQuestionId) ?? null)
     : null;
-  const composerToMusic = useMemo(
-    () => new Map(QUESTIONS.map((q) => [q.composer, q.music])),
-    [],
-  );
   const options = useMemo(() => {
     if (!currentQuestion) {
       return [];
     }
 
-    return createAnswerOptions(
-      currentQuestion.composer,
-      QUESTIONS.map((question) => question.composer),
-    ).map((composer) => ({
-      composer,
-      music: composerToMusic.get(composer) ?? composer,
-    }));
-  }, [composerToMusic, currentQuestion]);
+    return createAnswerOptions(currentQuestion.id, QUESTIONS);
+  }, [currentQuestion]);
   const nextQuestionAudioSources = useMemo(() => {
     const nextQuestionId = state.questionOrder[state.currentRound];
 
@@ -356,7 +346,7 @@ export const GameArena = () => {
     state.phase === "playing" && !player.isReady && !player.hasLoadError;
   const canToggleAudio = state.phase === "playing" && player.isReady;
 
-  const handleAnswer = (selectedComposer: string) => {
+  const handleAnswer = (selectedOption: Question) => {
     if (state.phase !== "playing") {
       return;
     }
@@ -368,16 +358,17 @@ export const GameArena = () => {
     player.stop();
 
     const breakdown = calculateRoundBreakdown({
-      isCorrect: selectedComposer === currentQuestion.composer,
+      isCorrect: selectedOption.id === currentQuestion.id,
       elapsedMs: player.currentTimeMs,
       hasReplayed: player.playCount > 1,
       currentStreak: state.streak,
     });
 
     submitAnswer({
-      selectedComposer,
+      selectedComposer: selectedOption.composer,
+      selectedMusic: selectedOption.music,
       correctComposer: currentQuestion.composer,
-      music: currentQuestion.music,
+      correctMusic: currentQuestion.music,
       breakdown,
     });
   };
@@ -389,17 +380,21 @@ export const GameArena = () => {
     "game-btn--opt-d",
   ] as const;
 
-  const getOptionStyle = (option: string, index: number) => {
+  const getOptionStyle = (option: Question, index: number) => {
     if (state.phase !== "revealed" || !state.answerResult) {
       return OPTION_IDLE_CLASSES[index % 4] ?? "game-btn--outline";
     }
 
-    if (option === state.answerResult.correctComposer) {
+    if (
+      option.composer === state.answerResult.correctComposer &&
+      option.music === state.answerResult.correctMusic
+    ) {
       return "game-btn--correct";
     }
 
     if (
-      option === state.answerResult.selectedComposer &&
+      option.composer === state.answerResult.selectedComposer &&
+      option.music === state.answerResult.selectedMusic &&
       state.answerResult.status === "wrong"
     ) {
       return "game-btn--wrong";
@@ -508,7 +503,7 @@ export const GameArena = () => {
                       : `Era ${state.answerResult.correctComposer}`}
                   </p>
                   <p className="mt-1 text-sm text-[rgba(18,33,34,0.7)]">
-                    {state.answerResult.music}
+                    {state.answerResult.correctMusic}
                   </p>
                 </motion.div>
               ) : (
@@ -595,19 +590,19 @@ export const GameArena = () => {
         <div className="mt-5 grid w-full max-w-sm grid-cols-2 gap-3">
           {options.map((option, index) => (
             <motion.button
-              key={option.composer}
+              key={option.id}
               type="button"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06, duration: 0.25 }}
-              onClick={() => handleAnswer(option.composer)}
+              onClick={() => handleAnswer(option)}
               disabled={state.phase !== "playing" || !player.hasStarted}
               tabIndex={
                 state.phase !== "playing" || !player.hasStarted ? -1 : 0
               }
               aria-label={`Responder: ${option.music} — ${option.composer}`}
               whileTap={{ scale: 0.95 }}
-              className={`game-btn game-btn--small ${getOptionStyle(option.composer, index)}`}
+              className={`game-btn game-btn--small ${getOptionStyle(option, index)}`}
             >
               <span className="block text-sm font-bold leading-tight">
                 {option.music}

@@ -18,15 +18,16 @@ import {
   type GameSessionContextValue,
 } from "@/features/game/use-game-session";
 
-type GameAction =
+export type GameAction =
   | { type: "HYDRATE"; payload: GameSessionState }
   | { type: "SET_PLAYER"; payload: PlayerRecord }
   | {
       type: "SUBMIT_ANSWER";
       payload: {
         selectedComposer: string;
+        selectedMusic: string;
         correctComposer: string;
-        music: string;
+        correctMusic: string;
         breakdown: AnswerBreakdown;
       };
     }
@@ -72,7 +73,7 @@ const createPlayingState = (player: PlayerRecord): GameSessionState => {
   };
 };
 
-const gameSessionReducer = (
+export const gameSessionReducer = (
   state: GameSessionState,
   action: GameAction,
 ): GameSessionState => {
@@ -96,7 +97,8 @@ const gameSessionReducer = (
       }
 
       const isCorrect =
-        action.payload.selectedComposer === action.payload.correctComposer;
+        action.payload.selectedComposer === action.payload.correctComposer &&
+        action.payload.selectedMusic === action.payload.correctMusic;
       const nextStreak = isCorrect ? state.streak + 1 : 0;
 
       return {
@@ -107,8 +109,9 @@ const gameSessionReducer = (
         answerResult: {
           status: isCorrect ? "correct" : "wrong",
           correctComposer: action.payload.correctComposer,
+          correctMusic: action.payload.correctMusic,
           selectedComposer: action.payload.selectedComposer,
-          music: action.payload.music,
+          selectedMusic: action.payload.selectedMusic,
           breakdown: action.payload.breakdown,
           streak: nextStreak,
         },

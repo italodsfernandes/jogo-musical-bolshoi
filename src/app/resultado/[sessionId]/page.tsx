@@ -8,7 +8,11 @@ import { ResultCelebration } from "@/components/result-celebration";
 import { ResultOgPreview } from "@/components/result-og-preview";
 import { SiteCredit } from "@/components/site-credit";
 import { SiteHeader } from "@/components/site-header";
-import { getResultSnapshot } from "@/lib/firebase";
+import {
+  computeSessionPosition,
+  sortLeaderboard,
+} from "@/features/game/leaderboard";
+import { getLeaderboard, getResultSnapshot } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +50,17 @@ export default async function ResultPage({ params }: ResultPageProps) {
   if (!result) {
     notFound();
   }
+
+  // Calculate live position from current leaderboard
+  const leaderboard = await getLeaderboard("all");
+  const livePosition = computeSessionPosition(leaderboard, {
+    registration: result.registration,
+    studentName: result.studentName,
+    playerType: result.playerType,
+    score: result.score,
+    finishedAt: result.finishedAt,
+    sessionId: result.sessionId,
+  });
 
   return (
     <main className="page-frame page-frame--stage page-enter">
@@ -90,7 +105,7 @@ export default async function ResultPage({ params }: ResultPageProps) {
                 Posição
               </p>
               <p className="mt-1 text-2xl font-black text-[hsl(var(--primary))]">
-                #{result.position}
+                #{livePosition}
               </p>
             </div>
             <div className="h-8 w-px bg-[rgba(176,148,90,0.2)]" />
@@ -121,7 +136,7 @@ export default async function ResultPage({ params }: ResultPageProps) {
           {/* Share actions */}
           <div className="mt-5">
             <p className="mb-3 text-center text-sm font-medium text-[rgba(255,248,230,0.78)]">
-              Compartilha aí 👇
+              Compartilhe seu card 👇
             </p>
             <ResultActions
               sessionId={sessionId}

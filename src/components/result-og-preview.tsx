@@ -36,7 +36,7 @@ export const ResultOgPreview = ({
         Seu card
       </p>
 
-      <div className="relative aspect-[1200/630] overflow-hidden rounded-2xl border-2 border-[rgba(255,248,230,0.15)] bg-[rgba(255,248,230,0.06)] shadow-lg">
+      <div className="relative aspect-square overflow-hidden rounded-[1.75rem] border-2 border-[rgba(255,248,230,0.15)] bg-[rgba(255,248,230,0.06)] shadow-lg">
         {!isLoaded ? (
           <div
             aria-hidden="true"
@@ -53,8 +53,8 @@ export const ResultOgPreview = ({
         <img
           alt={`Card de ${studentName}`}
           src={`/resultado/${sessionId}/opengraph-image`}
-          width={1200}
-          height={630}
+          width={1080}
+          height={1080}
           loading="lazy"
           onLoad={() => setIsLoaded(true)}
           className={`h-full w-full object-cover transition-opacity duration-400 ${
