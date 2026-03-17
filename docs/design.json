@@ -1,0 +1,121 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Poppins",
+      "role": "body"
+    },
+    {
+      "family": "Source Sans Pro",
+      "role": "body"
+    },
+    {
+      "family": "Playfair Display",
+      "role": "heading"
+    }
+  ],
+  "colors": {
+    "primary": "#022222",
+    "accent": "#B0945A",
+    "background": "#FFFFFF",
+    "textPrimary": "#B0945A",
+    "link": "#B0945A"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Poppins",
+      "heading": "Playfair Display"
+    },
+    "fontStacks": {
+      "heading": [
+        "Playfair Display"
+      ],
+      "body": [
+        "Source Sans Pro"
+      ],
+      "paragraph": [
+        "Poppins"
+      ]
+    },
+    "fontSizes": {
+      "h1": "44px",
+      "h2": "36px",
+      "body": "19px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "0px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#B0945A",
+      "textColor": "#FFFFFF",
+      "borderColor": "#B0945A",
+      "borderRadius": "25px",
+      "borderRadiusCorners": {
+        "topLeft": "25px",
+        "topRight": "25px",
+        "bottomRight": "25px",
+        "bottomLeft": "25px"
+      },
+      "shadow": "rgba(0, 0, 0, 0.25) 3px 3px 11px 0px"
+    }
+  },
+  "images": {
+    "logo": "https://lirp.cdn-website.com/8c369bb1/dms3rep/multi/opt/logo+Bolshoi+-+selo_color-1920w.png",
+    "favicon": "https://irp.cdn-website.com/8c369bb1/dms3rep/multi/Logo+Bolshoi+Brasil-599797e6.png",
+    "ogImage": "https://lirp.cdn-website.com/8c369bb1/dms3rep/multi/opt/shared-1920w.jpg",
+    "logoHref": "/",
+    "logoAlt": "A logo for escola do teatro bolshoi no brasil"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and the alt text matches the brand name 'Escola do Teatro Bolshoi no Brasil'.",
+    "confidence": 0.95,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "VEJA O RESULTADO!",
+      "reasoning": "The button 'VEJA O RESULTADO!' has a vibrant accent color (#B0945A) which aligns with the brand's color scheme, making it the primary call-to-action."
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "There is only one button detected, so no secondary button is available."
+    },
+    "confidence": 0.9
+  },
+  "personality": {
+    "tone": "professional",
+    "energy": "medium",
+    "targetAudience": "students and parents interested in ballet education"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.9,
+    "colors": 0.95,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and the alt text matches the brand name 'Escola do Teatro Bolshoi no Brasil'.",
+        "confidence": 0.95
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

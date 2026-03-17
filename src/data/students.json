@@ -1,0 +1,12 @@
+[
+  { "registration": "001", "name": "Jogador 1", "active": true },
+  { "registration": "002", "name": "Jogador 2", "active": true },
+  { "registration": "003", "name": "Jogador 3", "active": true },
+  { "registration": "004", "name": "Jogador 4", "active": true },
+  { "registration": "005", "name": "Jogador 5", "active": true },
+  { "registration": "006", "name": "Jogador 6", "active": true },
+  { "registration": "007", "name": "Jogador 7", "active": true },
+  { "registration": "008", "name": "Jogador 8", "active": true },
+  { "registration": "009", "name": "Jogador 9", "active": true },
+  { "registration": "010", "name": "Jogador 10", "active": true }
+]

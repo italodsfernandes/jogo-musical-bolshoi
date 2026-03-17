@@ -1,50 +1,109 @@
-# React + TypeScript + Vite
+# MusiQuiz Piano Day
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Experiência em `Next.js` para o Piano Day da Escola Bolshoi, com entrada por matrícula, quiz musical com áudio local, ranking em `Firebase Realtime Database` e card final compartilhável.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Next.js 16 + App Router
+- React 19
+- Tailwind CSS + primitives estilo shadcn/ui
+- Framer Motion
+- Howler.js
+- Firebase Realtime Database
+- Vitest
 
-## Expanding the ESLint configuration
+## Fluxos principais
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- Entrada via matrícula validada contra `src/data/students.json`
+- Confirmação do nome antes de entrar no jogo
+- Rodadas com score `500 + velocidade + combo`
+- Melhor score salvo por matrícula
+- Ranking público do evento
+- Página pública de resultado por sessão
+- Card social gerado em `/resultado/[sessionId]/opengraph-image`
 
-- Configure the top-level `parserOptions` property like this:
+## Cálculo de pontuação
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+Cada rodada vale até **1.100 pontos**, distribuídos em três componentes:
+
+| Componente | Valor |
+|---|---|
+| Acerto base | 500 pts |
+| Bônus de velocidade | 0 – 300 pts |
+| Bônus de sequência (streak) | 0 – 300 pts |
+
+**Bônus de velocidade:** começa em 300 e cai 10 pts por segundo decorrido. Chega a zero após 30 s. É zerado se o jogador ouviu o áudio mais de uma vez.
+
+**Bônus de sequência:**
+
+| Acertos consecutivos | Bônus |
+|---|---|
+| 1ª acertada | +100 pts |
+| 2ª acertada | +200 pts |
+| 3ª em diante | +300 pts |
+
+**Pontuação máxima teórica:** 10 questões respondidas instantaneamente, sem replay, com sequência completa = **10.700 pts**
+_(Q1: 900 + Q2: 1.000 + Q3–Q10: 1.100 × 8)_
+
+**Títulos:**
+
+| Pontuação | Título |
+|---|---|
+| ≥ 8.000 | Estrela do Piano Day |
+| ≥ 5.000 | Virtuose em Ascensão |
+| < 5.000 | Aprendiz das Teclas |
+
+## Scripts
+
+```bash
+npm install
+npm run dev
+npm run test
+npm run lint
+npm run build
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Base de alunos
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Fonte atual: `src/data/students.json`
+- Importação opcional de CSV:
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+npm run students:import -- ./students.csv
+```
+
+O CSV deve usar cabeçalhos `registration,name,active`.
+
+## Áudios locais
+
+- Os arquivos ficam em `public/audio`
+- Para produção, substitua esses MP3s pelos trechos finais licenciados do evento mantendo os mesmos nomes de arquivo definidos em `src/features/game/questions.ts`
+
+## Variáveis de ambiente
+
+O projeto usa `FIREBASE_DATABASE_URL` como configuração oficial do banco.
+Se quiser separar o ranking por edição do evento, defina também
+`FIREBASE_SCORE_NAMESPACE`. Exemplo: `scores202603`.
+
+Exemplo mínimo:
+
+```bash
+FIREBASE_DATABASE_URL=
+FIREBASE_SCORE_NAMESPACE=scores202603
+```
+
+Para este projeto, o banco atual está autorizado no namespace legado
+`scores202503`. Em ambiente local, use `FIREBASE_SCORE_NAMESPACE=scores202503`.
+
+## Estrutura
+
+```text
+src/
+  app/                    # rotas, API routes e OG image
+  components/             # componentes cliente e UI
+  data/                   # base local de matriculas
+  features/game/          # regras do jogo, score e player
+  lib/                    # integracoes e utilitarios servidor/cliente
+public/audio/             # trechos MP3 locais
+scripts/                  # importacao de alunos
 ```
