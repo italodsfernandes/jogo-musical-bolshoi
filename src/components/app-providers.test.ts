@@ -11,8 +11,26 @@ const createBaseState = (): GameSessionState => ({
   streak: 2,
   phase: "playing",
   currentRound: 1,
-  questionOrder: ["q-1", "q-2"],
-  currentQuestionId: "q-1",
+  roundCursor: "opaque-round-cursor",
+  totalRounds: 2,
+  currentRoundData: {
+    currentQuestion: {
+      answerKey: "answer-1",
+      audioToken: "audio-token-1",
+    },
+    options: [
+      {
+        optionId: "answer-1",
+        composer: "Correct composer",
+        music: "Correct music",
+      },
+      {
+        optionId: "answer-2",
+        composer: "Wrong composer",
+        music: "Wrong music",
+      },
+    ],
+  },
   answerResult: null,
   sessionId: "session-1",
   hasSavedScore: false,
@@ -26,10 +44,11 @@ describe("gameSessionReducer", () => {
     const nextState = gameSessionReducer(state, {
       type: "SUBMIT_ANSWER",
       payload: {
-        selectedComposer: "Tchaikovsky",
-        selectedMusic: "Wrong music",
-        correctComposer: "Tchaikovsky",
-        correctMusic: "Correct music",
+        selectedOption: {
+          optionId: "answer-2",
+          composer: "Correct composer",
+          music: "Wrong music",
+        },
         breakdown: {
           baseCorrect: 0,
           speedBonus: 0,
@@ -49,10 +68,11 @@ describe("gameSessionReducer", () => {
     const nextState = gameSessionReducer(state, {
       type: "SUBMIT_ANSWER",
       payload: {
-        selectedComposer: "Tchaikovsky",
-        selectedMusic: "Correct music",
-        correctComposer: "Tchaikovsky",
-        correctMusic: "Correct music",
+        selectedOption: {
+          optionId: "answer-1",
+          composer: "Correct composer",
+          music: "Correct music",
+        },
         breakdown: {
           baseCorrect: 500,
           speedBonus: 200,
@@ -64,5 +84,41 @@ describe("gameSessionReducer", () => {
 
     expect(nextState.answerResult?.status).toBe("correct");
     expect(nextState.streak).toBe(state.streak + 1);
+  });
+
+  it("loads the next round payload when advancing after reveal", () => {
+    const state = {
+      ...createBaseState(),
+      phase: "revealed" as const,
+    };
+
+    const nextState = gameSessionReducer(state, {
+      type: "ADVANCE_FLOW",
+      payload: {
+        currentRound: 2,
+        roundCursor: "opaque-round-cursor-2",
+        roundData: {
+          currentQuestion: {
+            answerKey: "answer-3",
+            audioToken: "audio-token-2",
+          },
+          options: [
+            {
+              optionId: "answer-3",
+              composer: "Next composer",
+              music: "Next music",
+            },
+          ],
+        },
+        finished: false,
+      },
+    });
+
+    expect(nextState.phase).toBe("playing");
+    expect(nextState.currentRound).toBe(2);
+    expect(nextState.roundCursor).toBe("opaque-round-cursor-2");
+    expect(nextState.currentRoundData?.currentQuestion.answerKey).toBe(
+      "answer-3",
+    );
   });
 });

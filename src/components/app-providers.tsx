@@ -2,16 +2,14 @@
 
 import { ReactNode, useMemo, useReducer } from "react";
 
-import { QUESTION_IDS } from "@/features/game/questions";
-import {
-  buildQuestionOrder,
-  createSessionId,
-  normalizeStudentName,
-} from "@/features/game/scoring";
+import { normalizeStudentName } from "@/features/game/scoring";
 import {
   AnswerBreakdown,
+  GameRoundData,
   GameSessionState,
   PlayerRecord,
+  QuestionOption,
+  StartGamePayload,
 } from "@/features/game/types";
 import {
   GameSessionContext,
@@ -21,17 +19,23 @@ import {
 export type GameAction =
   | { type: "HYDRATE"; payload: GameSessionState }
   | { type: "SET_PLAYER"; payload: PlayerRecord }
+  | { type: "BEGIN_GAME"; payload: StartGamePayload }
   | {
       type: "SUBMIT_ANSWER";
       payload: {
-        selectedComposer: string;
-        selectedMusic: string;
-        correctComposer: string;
-        correctMusic: string;
+        selectedOption: QuestionOption;
         breakdown: AnswerBreakdown;
       };
     }
-  | { type: "ADVANCE_FLOW" }
+  | {
+      type: "ADVANCE_FLOW";
+      payload: {
+        currentRound: number;
+        roundCursor: string | null;
+        roundData: GameRoundData | null;
+        finished: boolean;
+      };
+    }
   | { type: "SET_SUBMITTING" }
   | { type: "MARK_SAVED"; payload: { resultSessionId: string } }
   | { type: "RESET_GAME" }
@@ -45,33 +49,14 @@ const createInitialState = (): GameSessionState => ({
   streak: 0,
   phase: "idle",
   currentRound: 0,
-  questionOrder: [],
-  currentQuestionId: null,
+  roundCursor: "",
+  totalRounds: 0,
+  currentRoundData: null,
   answerResult: null,
   sessionId: null,
   hasSavedScore: false,
   resultSessionId: null,
 });
-
-const createPlayingState = (player: PlayerRecord): GameSessionState => {
-  const questionOrder = buildQuestionOrder(QUESTION_IDS);
-
-  return {
-    registration: player.registration,
-    studentName: normalizeStudentName(player.name),
-    playerType: player.playerType,
-    score: 0,
-    streak: 0,
-    phase: "playing",
-    currentRound: 1,
-    questionOrder,
-    currentQuestionId: questionOrder[0] ?? null,
-    answerResult: null,
-    sessionId: createSessionId(),
-    hasSavedScore: false,
-    resultSessionId: null,
-  };
-};
 
 export const gameSessionReducer = (
   state: GameSessionState,
@@ -91,14 +76,38 @@ export const gameSessionReducer = (
         playerType: action.payload.playerType,
         phase: "player-ready",
       };
+    case "BEGIN_GAME":
+      return {
+        ...state,
+        score: 0,
+        streak: 0,
+        phase: "playing",
+        currentRound: action.payload.currentRound,
+        roundCursor: action.payload.roundCursor,
+        totalRounds: action.payload.totalRounds,
+        currentRoundData: action.payload.roundData,
+        answerResult: null,
+        sessionId: action.payload.sessionId,
+        hasSavedScore: false,
+        resultSessionId: null,
+      };
     case "SUBMIT_ANSWER": {
-      if (!state.currentQuestionId) {
+      if (!state.currentRoundData) {
+        return state;
+      }
+
+      const correctOption = state.currentRoundData.options.find(
+        (option) =>
+          option.optionId === state.currentRoundData?.currentQuestion.answerKey,
+      );
+
+      if (!correctOption) {
         return state;
       }
 
       const isCorrect =
-        action.payload.selectedComposer === action.payload.correctComposer &&
-        action.payload.selectedMusic === action.payload.correctMusic;
+        action.payload.selectedOption.optionId ===
+        state.currentRoundData.currentQuestion.answerKey;
       const nextStreak = isCorrect ? state.streak + 1 : 0;
 
       return {
@@ -108,44 +117,36 @@ export const gameSessionReducer = (
         phase: "revealed",
         answerResult: {
           status: isCorrect ? "correct" : "wrong",
-          correctComposer: action.payload.correctComposer,
-          correctMusic: action.payload.correctMusic,
-          selectedComposer: action.payload.selectedComposer,
-          selectedMusic: action.payload.selectedMusic,
+          correctComposer: correctOption.composer,
+          correctMusic: correctOption.music,
+          selectedComposer: action.payload.selectedOption.composer,
+          selectedMusic: action.payload.selectedOption.music,
           breakdown: action.payload.breakdown,
           streak: nextStreak,
         },
       };
     }
     case "ADVANCE_FLOW": {
-      if (state.phase === "player-ready") {
-        return createPlayingState({
-          registration: state.registration,
-          name: state.studentName,
-          playerType: state.playerType ?? "student",
-        });
-      }
-
       if (state.phase !== "revealed") {
         return state;
       }
 
-      const nextRound = state.currentRound + 1;
-      const nextQuestionId = state.questionOrder[nextRound - 1] ?? null;
-
-      if (!nextQuestionId) {
+      if (action.payload.finished || !action.payload.roundData) {
         return {
           ...state,
+          currentRound: state.totalRounds,
+          roundCursor: "",
           phase: "finished",
-          currentQuestionId: null,
+          currentRoundData: null,
           answerResult: null,
         };
       }
 
       return {
         ...state,
-        currentRound: nextRound,
-        currentQuestionId: nextQuestionId,
+        currentRound: action.payload.currentRound,
+        roundCursor: action.payload.roundCursor ?? "",
+        currentRoundData: action.payload.roundData,
         phase: "playing",
         answerResult: null,
       };
@@ -183,9 +184,9 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
       actions: {
         setPlayer: (player) =>
           dispatch({ type: "SET_PLAYER", payload: player }),
-        beginGame: () => dispatch({ type: "ADVANCE_FLOW" }),
+        beginGame: (payload) => dispatch({ type: "BEGIN_GAME", payload }),
         submitAnswer: (payload) => dispatch({ type: "SUBMIT_ANSWER", payload }),
-        advanceFlow: () => dispatch({ type: "ADVANCE_FLOW" }),
+        advanceFlow: (payload) => dispatch({ type: "ADVANCE_FLOW", payload }),
         setSubmitting: () => dispatch({ type: "SET_SUBMITTING" }),
         markSaved: (resultSessionId) =>
           dispatch({ type: "MARK_SAVED", payload: { resultSessionId } }),

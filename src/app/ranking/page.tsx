@@ -86,7 +86,7 @@ export default async function RankingPage({ searchParams }: RankingPageProps) {
               >
                 <span className="text-2xl">{MEDALS[podiumIndex]}</span>
                 <p
-                  className={`mt-2 max-w-[82px] truncate text-sm font-bold text-[hsl(var(--ivory))] sm:max-w-none ${isFirst ? "text-base" : ""}`}
+                  className={`mt-2 w-full whitespace-normal break-words text-center font-bold leading-tight text-[hsl(var(--ivory))] ${isFirst ? "text-base" : "text-sm"}`}
                 >
                   {entry ? entry.studentName : "---"}
                 </p>
@@ -120,7 +120,7 @@ export default async function RankingPage({ searchParams }: RankingPageProps) {
                 {index + 4}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-[hsl(var(--ivory))]">
+                <p className="whitespace-normal break-words text-sm font-semibold leading-snug text-[hsl(var(--ivory))]">
                   {entry.studentName}
                 </p>
               </div>

@@ -4,19 +4,19 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 import { LoaderCircleIcon, PauseIcon, PlayIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SiteCredit } from "@/components/site-credit";
 import { Button } from "@/components/ui/button";
-import { QUESTIONS, QUESTIONS_BY_ID } from "@/features/game/questions";
-import {
-  calculateRoundBreakdown,
-  createAnswerOptions,
-} from "@/features/game/scoring";
+import { calculateRoundBreakdown } from "@/features/game/scoring";
 import { useHowlerPlayer } from "@/features/game/use-howler-player";
 import { useGameSession } from "@/features/game/use-game-session";
-import { PersistedResultResponse, Question } from "@/features/game/types";
+import {
+  NextRoundPayload,
+  PersistedResultResponse,
+  QuestionOption,
+} from "@/features/game/types";
 
 const REVEAL_DELAY_MS = 2300;
 
@@ -39,6 +39,7 @@ export const GameArena = () => {
   } = useGameSession();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [roundAdvanceError, setRoundAdvanceError] = useState<string | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
   const [isScoreSparkling, setIsScoreSparkling] = useState(false);
   const [roundStatuses, setRoundStatuses] = useState<
@@ -47,28 +48,9 @@ export const GameArena = () => {
   const prevScoreRef = useRef(0);
   const registeredRevealRoundRef = useRef<number | null>(null);
 
-  const currentQuestion = state.currentQuestionId
-    ? (QUESTIONS_BY_ID.get(state.currentQuestionId) ?? null)
-    : null;
-  const options = useMemo(() => {
-    if (!currentQuestion) {
-      return [];
-    }
-
-    return createAnswerOptions(currentQuestion.id, QUESTIONS);
-  }, [currentQuestion]);
-  const nextQuestionAudioSources = useMemo(() => {
-    const nextQuestionId = state.questionOrder[state.currentRound];
-
-    if (!nextQuestionId) {
-      return [];
-    }
-
-    const nextQuestion = QUESTIONS_BY_ID.get(nextQuestionId);
-
-    return nextQuestion ? [nextQuestion.audioSrc] : [];
-  }, [state.currentRound, state.questionOrder]);
-  const player = useHowlerPlayer(currentQuestion, nextQuestionAudioSources);
+  const currentQuestion = state.currentRoundData?.currentQuestion ?? null;
+  const options = state.currentRoundData?.options ?? [];
+  const player = useHowlerPlayer(currentQuestion);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -106,23 +88,23 @@ export const GameArena = () => {
   }, [reduceMotion, state.answerResult?.status, state.phase]);
 
   useEffect(() => {
-    if (!state.questionOrder.length) {
+    if (!state.totalRounds) {
       setRoundStatuses([]);
       registeredRevealRoundRef.current = null;
       return;
     }
 
     setRoundStatuses((current) => {
-      if (current.length === state.questionOrder.length) {
+      if (current.length === state.totalRounds) {
         return current;
       }
 
       return Array.from(
-        { length: state.questionOrder.length },
+        { length: state.totalRounds },
         (_, index) => current[index] ?? null,
       );
     });
-  }, [state.questionOrder.length]);
+  }, [state.totalRounds]);
 
   useEffect(() => {
     if (state.phase !== "revealed" || !state.answerResult) {
@@ -230,12 +212,52 @@ export const GameArena = () => {
       return;
     }
 
+    let cancelled = false;
+
     const timer = window.setTimeout(() => {
-      advanceFlow();
+      void (async () => {
+        setRoundAdvanceError(null);
+
+        try {
+          const response = await fetch("/api/game", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "next",
+              roundCursor: state.roundCursor,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Nao foi possivel carregar a proxima rodada.");
+          }
+
+          const payload = (await response.json()) as NextRoundPayload;
+
+          if (!cancelled) {
+            advanceFlow(payload);
+          }
+        } catch {
+          if (!cancelled) {
+            setRoundAdvanceError("Não conseguimos carregar a próxima rodada.");
+          }
+        }
+      })();
     }, REVEAL_DELAY_MS);
 
-    return () => window.clearTimeout(timer);
-  }, [advanceFlow, state.phase]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [advanceFlow, state.phase, state.roundCursor]);
+
+  useEffect(() => {
+    if (state.phase === "playing") {
+      setRoundAdvanceError(null);
+    }
+  }, [state.phase]);
 
   useEffect(() => {
     if (
@@ -346,8 +368,8 @@ export const GameArena = () => {
     state.phase === "playing" && !player.isReady && !player.hasLoadError;
   const canToggleAudio = state.phase === "playing" && player.isReady;
 
-  const handleAnswer = (selectedOption: Question) => {
-    if (state.phase !== "playing") {
+  const handleAnswer = (selectedOption: QuestionOption) => {
+    if (state.phase !== "playing" || !currentQuestion) {
       return;
     }
 
@@ -358,17 +380,14 @@ export const GameArena = () => {
     player.stop();
 
     const breakdown = calculateRoundBreakdown({
-      isCorrect: selectedOption.id === currentQuestion.id,
+      isCorrect: selectedOption.optionId === currentQuestion.answerKey,
       elapsedMs: player.currentTimeMs,
       hasReplayed: player.playCount > 1,
       currentStreak: state.streak,
     });
 
     submitAnswer({
-      selectedComposer: selectedOption.composer,
-      selectedMusic: selectedOption.music,
-      correctComposer: currentQuestion.composer,
-      correctMusic: currentQuestion.music,
+      selectedOption,
       breakdown,
     });
   };
@@ -380,7 +399,7 @@ export const GameArena = () => {
     "game-btn--opt-d",
   ] as const;
 
-  const getOptionStyle = (option: Question, index: number) => {
+  const getOptionStyle = (option: QuestionOption, index: number) => {
     if (state.phase !== "revealed" || !state.answerResult) {
       return OPTION_IDLE_CLASSES[index % 4] ?? "game-btn--outline";
     }
@@ -403,7 +422,7 @@ export const GameArena = () => {
     return "game-btn--outline opacity-40";
   };
 
-  const progressDots = state.questionOrder.map((_, index) => {
+  const progressDots = Array.from({ length: state.totalRounds }, (_, index) => {
     const currentIndex = Math.max(0, state.currentRound - 1);
     const isPast = index < currentIndex;
     const isCurrent = index === currentIndex;
@@ -437,7 +456,7 @@ export const GameArena = () => {
       {/* Top bar: round + score */}
       <div className="game-bar gap-3">
         <span className="game-pill--light shrink-0">
-          Rodada {state.currentRound}/{state.questionOrder.length}
+          Rodada {state.currentRound}/{state.totalRounds}
         </span>
         <span
           className={`game-pill--light shrink-0 ${isScoreSparkling ? "score-sparkle" : ""}`}
@@ -590,7 +609,7 @@ export const GameArena = () => {
         <div className="mt-5 grid w-full max-w-sm grid-cols-2 gap-3">
           {options.map((option, index) => (
             <motion.button
-              key={option.id}
+              key={option.optionId}
               type="button"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -624,7 +643,7 @@ export const GameArena = () => {
           }`}
         >
           {state.phase === "revealed" ? (
-            "Próxima..."
+            roundAdvanceError ?? "Próxima..."
           ) : state.phase === "playing" && player.hasLoadError ? (
             "Não foi possível carregar este trecho."
           ) : state.phase === "playing" && !player.isReady ? (

@@ -68,7 +68,12 @@ export const ResultActions = ({
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Button size="lg" onClick={handleShare} disabled={isSharing}>
+      <Button
+        size="lg"
+        onClick={handleShare}
+        disabled={isSharing}
+        className="text-sm"
+      >
         {isSharing ? (
           <LoaderCircleIcon className="h-4 w-4 animate-spin" />
         ) : shareFeedback !== "idle" ? (
@@ -80,11 +85,12 @@ export const ResultActions = ({
           ? "Compartilhado!"
           : shareFeedback === "copied"
             ? "Copiado!"
-            : "Compartilhar card"}
+            : "Compartilhar"}
       </Button>
       <Button
         size="lg"
         variant="outline"
+        className="text-sm"
         onClick={() => router.push(`/ranking`)}
       >
         <TrophyIcon className="h-4 w-4" />

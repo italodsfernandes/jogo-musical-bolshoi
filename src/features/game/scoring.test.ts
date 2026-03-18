@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateRoundBreakdown,
-  createAnswerOptions,
   normalizeRegistration,
 } from "@/features/game/scoring";
-import { QUESTIONS } from "@/features/game/questions";
 
 describe("game scoring", () => {
   it("normalizes registration to digits only", () => {
@@ -145,57 +143,7 @@ describe("game scoring", () => {
       baseCorrect: 0,
       speedBonus: 0,
       streakBonus: 0,
-      total: 0,
-    });
-  });
-
-  it("always includes the correct question by id", () => {
-    const currentQuestion = QUESTIONS[0];
-    const options = createAnswerOptions(currentQuestion.id, QUESTIONS);
-
-    expect(options.some((option) => option.id === currentQuestion.id)).toBe(
-      true
-    );
-  });
-
-  it("keeps the exact current question when composer is repeated (Tchaikovsky)", () => {
-    const currentQuestion = QUESTIONS.find(
-      (question) => question.id === "tchaikovsky-piano-concerto-1"
-    );
-
-    expect(currentQuestion).toBeDefined();
-
-    const options = createAnswerOptions(currentQuestion!.id, QUESTIONS);
-
-    expect(
-      options.some(
-        (option) =>
-          option.id === currentQuestion!.id &&
-          option.music === currentQuestion!.music &&
-          option.composer === currentQuestion!.composer
-      )
-    ).toBe(true);
-  });
-
-  it("does not duplicate ids in the options list", () => {
-    const currentQuestion = QUESTIONS[0];
-    const duplicatedPool = [
-      ...QUESTIONS,
-      QUESTIONS[1],
-      QUESTIONS[2],
-      QUESTIONS[3],
-    ];
-
-    const options = createAnswerOptions(currentQuestion.id, duplicatedPool);
-    const optionIds = options.map((option) => option.id);
-
-    expect(new Set(optionIds).size).toBe(optionIds.length);
-  });
-
-  it("limits options to the total available unique questions", () => {
-    const uniqueSmallPool = [QUESTIONS[0], QUESTIONS[1], QUESTIONS[2]];
-    const options = createAnswerOptions(QUESTIONS[0].id, uniqueSmallPool);
-
-    expect(options).toHaveLength(3);
+        total: 0,
+      });
   });
 });

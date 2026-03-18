@@ -14,7 +14,7 @@ import {
   normalizeRegistration,
   normalizeStudentName,
 } from "@/features/game/scoring";
-import { PlayerRecord } from "@/features/game/types";
+import { PlayerRecord, StartGamePayload } from "@/features/game/types";
 import { BOLSHOI_LOGO_URL } from "@/lib/site";
 
 const VISITOR_STORAGE_KEY = "musiquiz-visitor";
@@ -88,6 +88,7 @@ export const StartExperience = ({
   );
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isStartingGame, setIsStartingGame] = useState(false);
   const [errorShake, setErrorShake] = useState(0);
   const [storedVisitorName, setStoredVisitorName] = useState<string | null>(
     null,
@@ -208,20 +209,16 @@ export const StartExperience = ({
     });
   };
 
-  const nameParts = normalizeStudentName(playerInput);
-  const hasFullName = nameParts.split(" ").filter(Boolean).length >= 2;
   const inputMode = playerInput.trim()
     ? isDigitsOnly(playerInput)
       ? "student"
-      : hasFullName
-        ? "visitor"
-        : "neutral"
+      : "visitor"
     : "neutral";
 
   const normalizedRegistration = normalizeRegistration(playerInput);
   const normalizedVisitorName = normalizeStudentName(playerInput);
   const isStudentInputValid = normalizedRegistration.length > 0;
-  const isVisitorInputValid = hasFullName && normalizedVisitorName.length >= 2;
+  const isVisitorInputValid = normalizedVisitorName.length >= 2;
   const canLookup =
     inputMode === "student"
       ? isStudentInputValid
@@ -231,9 +228,7 @@ export const StartExperience = ({
 
   const instantHint =
     inputMode === "neutral"
-      ? playerInput.trim()
-        ? "Para visitante, digite nome e sobrenome."
-        : "Digite matrícula ou nome e sobrenome."
+      ? "Digite matrícula ou seu nome."
       : inputMode === "student"
         ? isStudentInputValid
           ? "Aperta Enter pra validar."
@@ -246,7 +241,7 @@ export const StartExperience = ({
 
   const handleLookup = () => {
     if (inputMode === "neutral") {
-      setLookupError("Digite matrícula ou nome e sobrenome.");
+      setLookupError("Digite matrícula ou seu nome.");
       setErrorShake((value) => value + 1);
       return;
     }
@@ -266,10 +261,35 @@ export const StartExperience = ({
       return;
     }
 
-    resetGame();
-    setPlayer(player);
-    beginGame();
-    router.push("/game");
+    void (async () => {
+      resetGame();
+      setPlayer(player);
+      setLookupError(null);
+      setIsStartingGame(true);
+
+      try {
+        const response = await fetch("/api/game", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "start" }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Nao foi possivel iniciar o jogo.");
+        }
+
+        const payload = (await response.json()) as StartGamePayload;
+        beginGame(payload);
+        router.push("/game");
+      } catch {
+        setLookupError("Não foi possível iniciar agora. Tente de novo.");
+        setErrorShake((value) => value + 1);
+      } finally {
+        setIsStartingGame(false);
+      }
+    })();
   };
 
   return (
@@ -431,13 +451,21 @@ export const StartExperience = ({
           <motion.button
             type="button"
             onClick={player ? handleStartGame : handleLookup}
-            disabled={isSearching || (!player && !canLookup)}
+            disabled={isSearching || isStartingGame || (!player && !canLookup)}
             whileTap={{ scale: 0.97 }}
             className="game-btn flex min-h-14 w-full items-center justify-center py-4 text-xl"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
-                key={isSearching ? "searching" : player ? "start" : "enter"}
+                key={
+                  isSearching
+                    ? "searching"
+                    : isStartingGame
+                      ? "starting"
+                      : player
+                        ? "start"
+                        : "enter"
+                }
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
@@ -448,6 +476,11 @@ export const StartExperience = ({
                   <>
                     <LoaderCircleIcon className="h-5 w-5 animate-spin" />
                     Buscando...
+                  </>
+                ) : isStartingGame ? (
+                  <>
+                    <LoaderCircleIcon className="h-5 w-5 animate-spin" />
+                    Preparando...
                   </>
                 ) : player ? (
                   "Começar Jogo"

@@ -19,6 +19,37 @@ export interface Question {
   audioSrc: string;
 }
 
+export interface CurrentQuestionPayload {
+  answerKey: string;
+  audioToken: string;
+}
+
+export interface QuestionOption {
+  optionId: string;
+  composer: string;
+  music: string;
+}
+
+export interface GameRoundData {
+  currentQuestion: CurrentQuestionPayload;
+  options: QuestionOption[];
+}
+
+export interface StartGamePayload {
+  sessionId: string;
+  roundCursor: string;
+  totalRounds: number;
+  currentRound: number;
+  roundData: GameRoundData;
+}
+
+export interface NextRoundPayload {
+  currentRound: number;
+  roundCursor: string | null;
+  roundData: GameRoundData | null;
+  finished: boolean;
+}
+
 export interface AnswerBreakdown {
   baseCorrect: number;
   speedBonus: number;
@@ -52,8 +83,9 @@ export interface GameSessionState {
   streak: number;
   phase: GamePhase;
   currentRound: number;
-  questionOrder: string[];
-  currentQuestionId: string | null;
+  roundCursor: string;
+  totalRounds: number;
+  currentRoundData: GameRoundData | null;
   answerResult: AnswerResult | null;
   sessionId: string | null;
   hasSavedScore: boolean;

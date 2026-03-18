@@ -8,10 +8,7 @@ import { ResultCelebration } from "@/components/result-celebration";
 import { ResultOgPreview } from "@/components/result-og-preview";
 import { SiteCredit } from "@/components/site-credit";
 import { SiteHeader } from "@/components/site-header";
-import {
-  computeSessionPosition,
-  sortLeaderboard,
-} from "@/features/game/leaderboard";
+import { computeSessionPosition } from "@/features/game/leaderboard";
 import { getLeaderboard, getResultSnapshot } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";

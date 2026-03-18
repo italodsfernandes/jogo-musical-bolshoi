@@ -1,4 +1,4 @@
-import { AnswerBreakdown, Question } from "@/features/game/types";
+import { AnswerBreakdown } from "@/features/game/types";
 
 const BASE_CORRECT_SCORE = 500;
 const MAX_SPEED_BONUS = 300;
@@ -17,49 +17,6 @@ export const normalizeRegistration = (value: string) =>
 
 export const normalizeStudentName = (value: string) =>
   value.trim().replace(/\s+/g, " ");
-
-const shuffleArray = <T,>(items: T[]) => {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [
-      shuffled[randomIndex],
-      shuffled[index],
-    ];
-  }
-
-  return shuffled;
-};
-
-export const buildQuestionOrder = (questionIds: string[]) =>
-  shuffleArray(questionIds);
-
-export const createAnswerOptions = (
-  currentQuestionId: string,
-  allQuestions: Question[],
-  optionCount = 4
-): Question[] => {
-  const currentQuestion = allQuestions.find(
-    (question) => question.id === currentQuestionId
-  );
-
-  if (!currentQuestion) {
-    return [];
-  }
-
-  const uniqueOtherQuestionsById = new Map(
-    allQuestions
-      .filter((question) => question.id !== currentQuestionId)
-      .map((question) => [question.id, question])
-  );
-  const otherQuestions = shuffleArray([...uniqueOtherQuestionsById.values()]);
-
-  return shuffleArray([
-    currentQuestion,
-    ...otherQuestions.slice(0, optionCount - 1),
-  ]);
-};
 
 const calculateSpeedBonus = (elapsedMs: number) => {
   const safeElapsedMs = Math.max(elapsedMs, 0);

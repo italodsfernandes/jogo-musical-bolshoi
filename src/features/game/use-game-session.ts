@@ -4,8 +4,11 @@ import { createContext, useContext } from "react";
 
 import {
   AnswerBreakdown,
+  GameRoundData,
   GameSessionState,
   PlayerRecord,
+  QuestionOption,
+  StartGamePayload,
 } from "@/features/game/types";
 
 export interface GameSessionContextValue {
@@ -13,15 +16,17 @@ export interface GameSessionContextValue {
   state: GameSessionState;
   actions: {
     setPlayer: (player: PlayerRecord) => void;
-    beginGame: () => void;
+    beginGame: (payload: StartGamePayload) => void;
     submitAnswer: (payload: {
-      selectedComposer: string;
-      selectedMusic: string;
-      correctComposer: string;
-      correctMusic: string;
+      selectedOption: QuestionOption;
       breakdown: AnswerBreakdown;
     }) => void;
-    advanceFlow: () => void;
+    advanceFlow: (payload: {
+      currentRound: number;
+      roundCursor: string | null;
+      roundData: GameRoundData | null;
+      finished: boolean;
+    }) => void;
     setSubmitting: () => void;
     markSaved: (resultSessionId: string) => void;
     resetGame: () => void;
