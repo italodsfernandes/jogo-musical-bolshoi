@@ -3,14 +3,17 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { QUESTIONS } from "@/features/game/questions";
 import {
   createAnswerOptions,
-  createNextRoundPayload,
-  createRoundData,
-  createStartGamePayload,
+  createRoundState,
   decryptAudioToken,
-  decryptRoundCursor,
   encryptAudioToken,
-  encryptRoundCursor,
+  toPublicRoundData,
 } from "@/features/game/rounds";
+import {
+  createGameSession,
+  createNextRoundForSession,
+  markRoundStartedForSession,
+  submitAnswerForSession,
+} from "@/features/game/session";
 
 describe("game rounds", () => {
   const originalSecret = process.env.GAME_ORDER_SECRET;
@@ -84,15 +87,13 @@ describe("game rounds", () => {
     expect(roundOptions?.options).toHaveLength(3);
   });
 
-  it("creates round data without exposing semantic ids or public audio paths", () => {
+  it("creates a server-side round state and a public payload without exposing the answer", () => {
     const questionOrder = QUESTIONS.slice(0, 3).map((question) => question.id);
-    const roundData = createRoundData(questionOrder, 1);
+    const roundState = createRoundState(questionOrder, 1);
 
-    expect(roundData).toEqual({
-      currentQuestion: {
-        answerKey: expect.any(String),
-        audioToken: expect.any(String),
-      },
+    expect(roundState).toEqual({
+      answerKey: expect.any(String),
+      audioToken: expect.any(String),
       options: expect.arrayContaining([
         expect.objectContaining({
           optionId: expect.any(String),
@@ -100,26 +101,19 @@ describe("game rounds", () => {
           music: QUESTIONS[0].music,
         }),
       ]),
+      roundStartedAt: null,
+      answeredAt: null,
+      selectedOptionId: null,
     });
 
-    expect(roundData?.currentQuestion.answerKey).not.toContain(QUESTIONS[0].id);
-    expect(roundData?.currentQuestion.audioToken).not.toContain(QUESTIONS[0].audioSrc);
-  });
+    const roundData = toPublicRoundData(roundState!);
 
-  it("round-trips an encrypted round cursor", () => {
-    const cursor = encryptRoundCursor({
-      v: 1,
-      currentRound: 1,
-      questionOrder: QUESTIONS.map((question) => question.id),
-    });
-
-    expect(typeof cursor).toBe("string");
-    expect(cursor).not.toContain(QUESTIONS[0].id);
-
-    expect(decryptRoundCursor(cursor)).toEqual({
-      v: 1,
-      currentRound: 1,
-      questionOrder: QUESTIONS.map((question) => question.id),
+    expect(roundData).toEqual({
+      currentQuestion: {
+        audioToken: expect.any(String),
+      },
+      options: roundState!.options,
+      roundStartedAt: null,
     });
   });
 
@@ -133,45 +127,159 @@ describe("game rounds", () => {
     });
   });
 
-  it("rejects an adulterated round cursor", () => {
-    const cursor = encryptRoundCursor({
-      v: 1,
-      currentRound: 1,
-      questionOrder: QUESTIONS.map((question) => question.id),
+  it("creates a session and advances only after the round is answered", () => {
+    const { session, payload } = createGameSession({
+      player: {
+        registration: "2024001",
+        name: "Aluno Teste",
+        playerType: "student",
+      },
+      now: 1_000,
     });
-    const tamperedCursor = `${cursor.slice(0, -1)}x`;
 
-    expect(decryptRoundCursor(tamperedCursor)).toBeNull();
-    expect(createNextRoundPayload(tamperedCursor)).toBeNull();
-  });
-
-  it("builds a start payload without exposing ids or audio paths directly", () => {
-    const payload = createStartGamePayload();
-
-    expect(payload.sessionId).toBeTruthy();
-    expect(payload.currentRound).toBe(1);
-    expect(payload.totalRounds).toBe(QUESTIONS.length);
-    expect(payload.roundCursor).toEqual(expect.any(String));
-    expect(payload.roundCursor).not.toContain(QUESTIONS[0].id);
-    expect(payload.roundData.currentQuestion.answerKey).toEqual(expect.any(String));
+    expect(payload.player.name).toBe("Aluno Teste");
     expect(payload.roundData.currentQuestion.audioToken).toEqual(expect.any(String));
+
+    expect(() =>
+      createNextRoundForSession({
+        session,
+        currentRound: 1,
+      }),
+    ).toThrow("ainda nao foi respondida");
+
+    const started = markRoundStartedForSession({
+      session,
+      currentRound: 1,
+      now: 1_500,
+    });
+
+    const correctOption = started.session.currentRoundState?.options.find(
+      (option) => option.optionId === started.session.currentRoundState?.answerKey,
+    );
+
+    const answered = submitAnswerForSession({
+      session: started.session,
+      currentRound: 1,
+      selectedOptionId: correctOption?.optionId ?? null,
+      now: 2_000,
+    });
+
+    expect(answered.payload.answerResult.status).toBe("correct");
+    expect(answered.payload.score).toBeGreaterThan(0);
+
+    const nextRound = createNextRoundForSession({
+      session: answered.session,
+      currentRound: 1,
+    });
+
+    expect(nextRound.payload.finished).toBe(false);
+    expect(nextRound.payload.currentRound).toBe(2);
+    expect(nextRound.payload.roundData?.currentQuestion.audioToken).toEqual(
+      expect.any(String),
+    );
   });
 
-  it("advances the cursor and marks finished when there is no next round", () => {
-    const questionOrder = QUESTIONS.map((question) => question.id);
-    const finishingCursor = encryptRoundCursor({
-      v: 1,
-      currentRound: questionOrder.length,
-      questionOrder,
+  it("scores skipped rounds with zero points and resets streak", () => {
+    const { session } = createGameSession({
+      player: {
+        registration: "visitor-123",
+        name: "Visitante",
+        playerType: "visitor",
+      },
+      now: 500,
     });
 
-    const payload = createNextRoundPayload(finishingCursor);
-
-    expect(payload).toEqual({
-      currentRound: questionOrder.length + 1,
-      roundCursor: null,
-      roundData: null,
-      finished: true,
+    const skipped = submitAnswerForSession({
+      session: {
+        ...session,
+        streak: 3,
+      },
+      currentRound: 1,
+      selectedOptionId: null,
+      now: 4_000,
     });
+
+    expect(skipped.payload.answerResult.status).toBe("skipped");
+    expect(skipped.payload.answerResult.breakdown.total).toBe(0);
+    expect(skipped.session.streak).toBe(0);
+  });
+
+  it("starts counting time only after the first play", () => {
+    const { session } = createGameSession({
+      player: {
+        registration: "2024001",
+        name: "Aluno Teste",
+        playerType: "student",
+      },
+      now: 1_000,
+    });
+
+    expect(session.currentRoundState?.roundStartedAt).toBeNull();
+
+    const started = markRoundStartedForSession({
+      session,
+      currentRound: 1,
+      now: 1_200,
+    });
+
+    expect(started.roundStartedAt).toBe(1_200);
+    expect(started.session.currentRoundState?.roundStartedAt).toBe(1_200);
+  });
+
+  it("rejects answers before the first play starts the round", () => {
+    const { session } = createGameSession({
+      player: {
+        registration: "2024001",
+        name: "Aluno Teste",
+        playerType: "student",
+      },
+    });
+
+    const correctOption = session.currentRoundState?.options.find(
+      (option) => option.optionId === session.currentRoundState?.answerKey,
+    );
+
+    expect(() =>
+      submitAnswerForSession({
+        session,
+        currentRound: 1,
+        selectedOptionId: correctOption?.optionId ?? null,
+      }),
+    ).toThrow("Escute o trecho antes de responder.");
+  });
+
+  it("recovers gracefully from invalid legacy score and streak values", () => {
+    const { session } = createGameSession({
+      player: {
+        registration: "2024001",
+        name: "Aluno Teste",
+        playerType: "student",
+      },
+    });
+
+    const started = markRoundStartedForSession({
+      session: {
+        ...session,
+        score: Number.NaN as never,
+        streak: Number.NaN as never,
+      },
+      currentRound: 1,
+      now: 1_000,
+    });
+
+    const correctOption = started.session.currentRoundState?.options.find(
+      (option) => option.optionId === started.session.currentRoundState?.answerKey,
+    );
+
+    const answered = submitAnswerForSession({
+      session: started.session,
+      currentRound: 1,
+      selectedOptionId: correctOption?.optionId ?? null,
+      now: 2_000,
+    });
+
+    expect(answered.session.score).toBeGreaterThan(0);
+    expect(Number.isFinite(answered.session.score)).toBe(true);
+    expect(answered.session.streak).toBe(1);
   });
 });

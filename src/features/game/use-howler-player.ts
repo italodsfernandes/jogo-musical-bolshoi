@@ -1,33 +1,55 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Howl } from "howler";
+import { Howl, Howler } from "howler";
 
 import { CurrentQuestionPayload } from "@/features/game/types";
 
 const getAudioStreamUrl = (audioToken: string) =>
   `/api/game/audio/${encodeURIComponent(audioToken)}`;
 
-const createHowl = (src: string) =>
+const shouldPreferHtml5Audio = () => {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent ?? "";
+  const platform = navigator.platform ?? "";
+
+  return (
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+};
+
+const createHowl = (src: string, useHtml5Audio: boolean) =>
   new Howl({
     src: [src],
     format: ["mp3"],
-    html5: false,
+    html5: useHtml5Audio,
     preload: true,
   });
 
 export const useHowlerPlayer = (
   question: CurrentQuestionPayload | null,
 ) => {
+  const currentAudioToken = question?.audioToken ?? null;
   const soundRef = useRef<Howl | null>(null);
   const soundCacheRef = useRef(new Map<string, Howl>());
   const animationFrameRef = useRef<number | null>(null);
+  const unlockedRef = useRef(false);
+  const unlockRequestedRef = useRef(false);
+  const useHtml5AudioRef = useRef(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [lastStartedAudioToken, setLastStartedAudioToken] = useState<
+    string | null
+  >(null);
   const [playCount, setPlayCount] = useState(0);
 
   const cancelProgressAnimation = () => {
@@ -44,11 +66,15 @@ export const useHowlerPlayer = (
       return cachedSound;
     }
 
-    const sound = createHowl(src);
+    const sound = createHowl(src, useHtml5AudioRef.current);
     soundCacheRef.current.set(src, sound);
 
     return sound;
   };
+
+  useEffect(() => {
+    useHtml5AudioRef.current = shouldPreferHtml5Audio();
+  }, []);
 
   useEffect(() => {
     if (!question) {
@@ -83,6 +109,7 @@ export const useHowlerPlayer = (
     const handlePlay = () => {
       setIsPlaying(true);
       setHasStarted(true);
+      setLastStartedAudioToken(currentAudioToken);
       setPlayCount((currentPlayCount) => currentPlayCount + 1);
       animationFrameRef.current = window.requestAnimationFrame(syncProgress);
     };
@@ -105,6 +132,10 @@ export const useHowlerPlayer = (
       setIsReady(false);
       setHasLoadError(true);
     };
+    const handlePlayError = () => {
+      setIsPlaying(false);
+      setHasLoadError(true);
+    };
 
     soundRef.current = howl;
     setCurrentTimeMs(0);
@@ -112,6 +143,7 @@ export const useHowlerPlayer = (
     setIsReady(false);
     setHasLoadError(false);
     setHasStarted(false);
+    setLastStartedAudioToken(null);
     setPlayCount(0);
 
     howl.on("load", syncLoadedState);
@@ -120,6 +152,7 @@ export const useHowlerPlayer = (
     howl.on("stop", handleStop);
     howl.on("end", handleEnd);
     howl.on("loaderror", handleLoadError);
+    howl.on("playerror", handlePlayError);
 
     if (howl.state() === "loaded") {
       syncLoadedState();
@@ -132,11 +165,12 @@ export const useHowlerPlayer = (
       howl.off("stop", handleStop);
       howl.off("end", handleEnd);
       howl.off("loaderror", handleLoadError);
+      howl.off("playerror", handlePlayError);
       cancelProgressAnimation();
       howl.stop();
       soundRef.current = null;
     };
-  }, [question]);
+  }, [currentAudioToken, question, reloadKey]);
 
   useEffect(
     () => () => {
@@ -149,6 +183,32 @@ export const useHowlerPlayer = (
     },
     [],
   );
+
+  const primeAudio = () => {
+    if (unlockedRef.current) {
+      return;
+    }
+
+    if (!Howler.ctx || Howler.ctx.state !== "suspended") {
+      unlockedRef.current = true;
+      return;
+    }
+
+    if (unlockRequestedRef.current) {
+      return;
+    }
+
+    unlockRequestedRef.current = true;
+
+    void Howler.ctx
+      .resume()
+      .then(() => {
+        unlockedRef.current = true;
+      })
+      .catch(() => {
+        unlockRequestedRef.current = false;
+      });
+  };
 
   const toggle = (isEnabled = true) => {
     if (!isEnabled) {
@@ -170,6 +230,8 @@ export const useHowlerPlayer = (
       return;
     }
 
+    setHasLoadError(false);
+    primeAudio();
     sound.play();
   };
 
@@ -179,15 +241,41 @@ export const useHowlerPlayer = (
     setIsPlaying(false);
   };
 
+  const reload = () => {
+    if (!question) {
+      return;
+    }
+
+    const src = getAudioStreamUrl(question.audioToken);
+    const cachedSound = soundCacheRef.current.get(src);
+
+    if (cachedSound) {
+      cachedSound.stop();
+      cachedSound.unload();
+      soundCacheRef.current.delete(src);
+    }
+
+    setHasLoadError(false);
+    setIsReady(false);
+    setHasStarted(false);
+    setLastStartedAudioToken(null);
+    setPlayCount(0);
+    setCurrentTimeMs(0);
+    setReloadKey((current) => current + 1);
+  };
+
   return {
     isPlaying,
     isReady,
     hasLoadError,
     hasStarted,
+    lastStartedAudioToken,
     playCount,
     currentTimeMs,
     durationMs,
+    primeAudio,
     toggle,
     stop,
+    reload,
   };
 };

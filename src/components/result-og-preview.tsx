@@ -1,6 +1,7 @@
 "use client";
 
 import { DownloadIcon, LoaderCircleIcon } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 export const ResultOgPreview = ({
@@ -50,12 +51,11 @@ export const ResultOgPreview = ({
           </div>
         ) : null}
 
-        <img
+        <Image
           alt={`Card de ${studentName}`}
           src={`/resultado/${sessionId}/opengraph-image`}
-          width={1080}
-          height={1080}
-          loading="lazy"
+          fill
+          sizes="(max-width: 768px) 100vw, 448px"
           onLoad={() => setIsLoaded(true)}
           className={`h-full w-full object-cover transition-opacity duration-400 ${
             isLoaded ? "opacity-100" : "opacity-0"

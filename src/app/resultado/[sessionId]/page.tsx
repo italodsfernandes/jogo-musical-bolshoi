@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +14,10 @@ import { getLeaderboard, getResultSnapshot } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
 
+const getCachedResultSnapshot = cache((sessionId: string) =>
+  getResultSnapshot(sessionId),
+);
+
 interface ResultPageProps {
   params: Promise<{
     sessionId: string;
@@ -23,7 +28,7 @@ export async function generateMetadata({
   params,
 }: ResultPageProps): Promise<Metadata> {
   const { sessionId } = await params;
-  const result = await getResultSnapshot(sessionId).catch(() => null);
+  const result = await getCachedResultSnapshot(sessionId).catch(() => null);
 
   if (!result) {
     return {
@@ -42,7 +47,7 @@ export async function generateMetadata({
 
 export default async function ResultPage({ params }: ResultPageProps) {
   const { sessionId } = await params;
-  const result = await getResultSnapshot(sessionId).catch(() => null);
+  const result = await getCachedResultSnapshot(sessionId).catch(() => null);
 
   if (!result) {
     notFound();

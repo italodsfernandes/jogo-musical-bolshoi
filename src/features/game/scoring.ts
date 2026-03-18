@@ -2,7 +2,8 @@ import { AnswerBreakdown } from "@/features/game/types";
 
 const BASE_CORRECT_SCORE = 500;
 const MAX_SPEED_BONUS = 300;
-const SPEED_DECAY_PER_SECOND = 10;
+export const MAX_SPEED_BONUS_WINDOW_MS = 30_000;
+const SPEED_DECAY_STEP_MS = 100;
 
 export const createSessionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -18,11 +19,11 @@ export const normalizeRegistration = (value: string) =>
 export const normalizeStudentName = (value: string) =>
   value.trim().replace(/\s+/g, " ");
 
-const calculateSpeedBonus = (elapsedMs: number) => {
+export const calculateSpeedBonus = (elapsedMs: number) => {
   const safeElapsedMs = Math.max(elapsedMs, 0);
-  const elapsedSeconds = Math.floor(safeElapsedMs / 1000);
+  const elapsedSteps = Math.floor(safeElapsedMs / SPEED_DECAY_STEP_MS);
 
-  return Math.max(0, MAX_SPEED_BONUS - elapsedSeconds * SPEED_DECAY_PER_SECOND);
+  return Math.max(0, MAX_SPEED_BONUS - elapsedSteps);
 };
 
 const calculateStreakBonus = (nextStreak: number) => {
@@ -44,12 +45,10 @@ const calculateStreakBonus = (nextStreak: number) => {
 export const calculateRoundBreakdown = ({
   isCorrect,
   elapsedMs,
-  hasReplayed,
   currentStreak,
 }: {
   isCorrect: boolean;
   elapsedMs: number;
-  hasReplayed: boolean;
   currentStreak: number;
 }): AnswerBreakdown => {
   if (!isCorrect) {
@@ -62,7 +61,7 @@ export const calculateRoundBreakdown = ({
   }
 
   const nextStreak = currentStreak + 1;
-  const speedBonus = hasReplayed ? 0 : calculateSpeedBonus(elapsedMs);
+  const speedBonus = calculateSpeedBonus(elapsedMs);
   const streakBonus = calculateStreakBonus(nextStreak);
 
   return {

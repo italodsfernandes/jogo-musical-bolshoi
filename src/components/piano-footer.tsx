@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { KeyboardEvent, useCallback, useRef, useState } from "react";
 
 const KEYS = [
   { note: "C4", type: "white", freq: 261.63 },
@@ -21,12 +21,48 @@ const KEYS = [
 export function PianoFooter() {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const lastPointerNoteRef = useRef<string | null>(null);
+  const lastPointerTsRef = useRef(0);
+
+  const getAudioContext = () => {
+    if (audioCtxRef.current) {
+      return audioCtxRef.current;
+    }
+
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+
+    if (!AudioContextCtor) {
+      return null;
+    }
+
+    audioCtxRef.current = new AudioContextCtor();
+    return audioCtxRef.current;
+  };
+
+  const primeAudio = useCallback(() => {
+    const ctx = getAudioContext();
+
+    if (!ctx) {
+      return null;
+    }
+
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+
+    return ctx;
+  }, []);
 
   const playNote = useCallback((note: string, freq: number) => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
+    const ctx = primeAudio();
+
+    if (!ctx) {
+      return;
     }
-    const ctx = audioCtxRef.current;
+
     const now = ctx.currentTime;
 
     const osc = ctx.createOscillator();
@@ -47,7 +83,42 @@ export function PianoFooter() {
     setTimeout(() => {
       setActiveKey((cur) => (cur === note ? null : cur));
     }, 150);
-  }, []);
+  }, [primeAudio]);
+
+  const playPointerNote = (note: string, freq: number) => {
+    lastPointerNoteRef.current = note;
+    lastPointerTsRef.current = performance.now();
+    playNote(note, freq);
+  };
+
+  const handleClick = (note: string, freq: number) => {
+    const justPlayedFromPointer =
+      lastPointerNoteRef.current === note &&
+      performance.now() - lastPointerTsRef.current < 400;
+
+    if (justPlayedFromPointer) {
+      lastPointerNoteRef.current = null;
+      return;
+    }
+
+    playNote(note, freq);
+  };
+
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    note: string,
+    freq: number,
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    if (event.key === " ") {
+      event.preventDefault();
+    }
+
+    playNote(note, freq);
+  };
 
   return (
     <div className="piano-footer" aria-label="Piano decorativo">
@@ -56,7 +127,16 @@ export function PianoFooter() {
           key={key.note}
           type="button"
           className={`${key.type}${activeKey === key.note ? " pressed" : ""}`}
-          onPointerDown={() => playNote(key.note, key.freq)}
+          onPointerDown={() => {
+            playPointerNote(key.note, key.freq);
+          }}
+          onClick={() => {
+            handleClick(key.note, key.freq);
+          }}
+          onKeyDown={(event) => {
+            handleKeyDown(event, key.note, key.freq);
+          }}
+          aria-label={key.note}
         />
       ))}
     </div>

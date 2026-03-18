@@ -20,7 +20,6 @@ export interface Question {
 }
 
 export interface CurrentQuestionPayload {
-  answerKey: string;
   audioToken: string;
 }
 
@@ -33,19 +32,28 @@ export interface QuestionOption {
 export interface GameRoundData {
   currentQuestion: CurrentQuestionPayload;
   options: QuestionOption[];
+  roundStartedAt: number | null;
+}
+
+export interface GameRoundState {
+  answerKey: string;
+  audioToken: string;
+  options: QuestionOption[];
+  roundStartedAt: number | null;
+  answeredAt: number | null;
+  selectedOptionId: string | null;
 }
 
 export interface StartGamePayload {
   sessionId: string;
-  roundCursor: string;
   totalRounds: number;
   currentRound: number;
   roundData: GameRoundData;
+  player: PlayerRecord;
 }
 
 export interface NextRoundPayload {
   currentRound: number;
-  roundCursor: string | null;
   roundData: GameRoundData | null;
   finished: boolean;
 }
@@ -58,13 +66,21 @@ export interface AnswerBreakdown {
 }
 
 export interface AnswerResult {
-  status: "correct" | "wrong";
+  status: "correct" | "wrong" | "skipped";
   correctComposer: string;
   correctMusic: string;
-  selectedComposer: string;
-  selectedMusic: string;
+  selectedComposer: string | null;
+  selectedMusic: string | null;
   breakdown: AnswerBreakdown;
   streak: number;
+}
+
+export interface SubmitAnswerPayload {
+  currentRound: number;
+  score: number;
+  answerResult: AnswerResult;
+  finished: boolean;
+  result: PersistedResultResponse | null;
 }
 
 export type GamePhase =
@@ -83,13 +99,13 @@ export interface GameSessionState {
   streak: number;
   phase: GamePhase;
   currentRound: number;
-  roundCursor: string;
   totalRounds: number;
   currentRoundData: GameRoundData | null;
   answerResult: AnswerResult | null;
   sessionId: string | null;
   hasSavedScore: boolean;
   resultSessionId: string | null;
+  pendingResult: PersistedResultResponse | null;
 }
 
 export interface BestScoreEntry {
@@ -116,4 +132,20 @@ export interface ResultSnapshot {
 
 export interface PersistedResultResponse extends ResultSnapshot {
   leaderboardSize: number;
+}
+
+export interface GameSessionRecord {
+  sessionId: string;
+  registration: string;
+  studentName: string;
+  playerType: PlayerType;
+  questionOrder: string[];
+  totalRounds: number;
+  currentRound: number;
+  currentRoundState: GameRoundState | null;
+  score: number;
+  streak: number;
+  status: "active" | "finished";
+  finishedAt: number | null;
+  resultSessionId: string | null;
 }

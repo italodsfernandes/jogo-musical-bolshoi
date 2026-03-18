@@ -1,20 +1,12 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 import { QUESTION_IDS, QUESTIONS, QUESTIONS_BY_ID } from "@/features/game/questions";
-import { createSessionId } from "@/features/game/scoring";
 import {
   GameRoundData,
-  NextRoundPayload,
+  GameRoundState,
   Question,
   QuestionOption,
-  StartGamePayload,
 } from "@/features/game/types";
-
-interface RoundCursorPayload {
-  v: 1;
-  currentRound: number;
-  questionOrder: string[];
-}
 
 interface AudioTokenPayload {
   v: 1;
@@ -80,6 +72,10 @@ const encodeOpaqueToken = ({
   Buffer.concat([iv, authTag, ciphertext]).toString("base64url");
 
 const decodeOpaqueToken = (token: string) => {
+  if (Buffer.from(token, "base64url").toString("base64url") !== token) {
+    return null;
+  }
+
   const payload = Buffer.from(token, "base64url");
   const minLength = IV_LENGTH_BYTES + AUTH_TAG_LENGTH_BYTES + 1;
 
@@ -137,44 +133,6 @@ const decryptOpaquePayload = <T,>(purpose: string, token: string): T | null => {
   } catch {
     return null;
   }
-};
-
-const isCanonicalQuestionOrder = (
-  questionOrder: unknown,
-): questionOrder is string[] => {
-  if (
-    !Array.isArray(questionOrder) ||
-    questionOrder.length !== QUESTION_IDS.length
-  ) {
-    return false;
-  }
-
-  const uniqueIds = new Set(questionOrder);
-
-  if (uniqueIds.size !== QUESTION_IDS.length) {
-    return false;
-  }
-
-  return questionOrder.every(
-    (questionId): questionId is string =>
-      typeof questionId === "string" && QUESTIONS_BY_ID.has(questionId),
-  );
-};
-
-const isRoundCursorPayload = (payload: unknown): payload is RoundCursorPayload => {
-  if (!payload || typeof payload !== "object") {
-    return false;
-  }
-
-  const candidate = payload as Partial<RoundCursorPayload>;
-
-  return (
-    candidate.v === 1 &&
-    typeof candidate.currentRound === "number" &&
-    Number.isInteger(candidate.currentRound) &&
-    candidate.currentRound >= 1 &&
-    isCanonicalQuestionOrder(candidate.questionOrder)
-  );
 };
 
 const isAudioTokenPayload = (payload: unknown): payload is AudioTokenPayload => {
@@ -238,15 +196,6 @@ export const createAnswerOptions = (
   };
 };
 
-export const encryptRoundCursor = (payload: RoundCursorPayload) =>
-  encryptOpaquePayload("round-cursor", payload);
-
-export const decryptRoundCursor = (token: string): RoundCursorPayload | null => {
-  const parsed = decryptOpaquePayload<unknown>("round-cursor", token);
-
-  return isRoundCursorPayload(parsed) ? parsed : null;
-};
-
 export const encryptAudioToken = (audioSrc: string) =>
   encryptOpaquePayload("audio-token", {
     v: 1,
@@ -259,10 +208,10 @@ export const decryptAudioToken = (token: string): AudioTokenPayload | null => {
   return isAudioTokenPayload(parsed) ? parsed : null;
 };
 
-export const createRoundData = (
+export const createRoundState = (
   questionOrder: string[],
   currentRound: number,
-): GameRoundData | null => {
+): GameRoundState | null => {
   const currentQuestionId = questionOrder[currentRound - 1];
 
   if (!currentQuestionId) {
@@ -282,64 +231,23 @@ export const createRoundData = (
   }
 
   return {
-    currentQuestion: {
-      answerKey: roundOptions.answerKey,
-      audioToken: encryptAudioToken(currentQuestion.audioSrc),
-    },
+    answerKey: roundOptions.answerKey,
+    audioToken: encryptAudioToken(currentQuestion.audioSrc),
     options: roundOptions.options,
+    roundStartedAt: null,
+    answeredAt: null,
+    selectedOptionId: null,
   };
 };
 
-export const createStartGamePayload = (): StartGamePayload => {
-  const questionOrder = buildQuestionOrder();
-  const currentRound = 1;
-  const roundData = createRoundData(questionOrder, currentRound);
-
-  if (!roundData) {
-    throw new Error("Nao foi possivel montar a primeira rodada.");
-  }
-
+export const toPublicRoundData = (
+  roundState: GameRoundState,
+): GameRoundData => {
   return {
-    sessionId: createSessionId(),
-    roundCursor: encryptRoundCursor({
-      v: 1,
-      currentRound,
-      questionOrder,
-    }),
-    totalRounds: questionOrder.length,
-    currentRound,
-    roundData,
-  };
-};
-
-export const createNextRoundPayload = (
-  roundCursor: string,
-): NextRoundPayload | null => {
-  const decodedCursor = decryptRoundCursor(roundCursor);
-
-  if (!decodedCursor) {
-    return null;
-  }
-
-  const nextRound = decodedCursor.currentRound + 1;
-  const roundData = createRoundData(decodedCursor.questionOrder, nextRound);
-
-  if (!roundData) {
-    return {
-      currentRound: nextRound,
-      roundCursor: null,
-      roundData: null,
-      finished: true,
-    };
-  }
-
-  return {
-    currentRound: nextRound,
-    roundCursor: encryptRoundCursor({
-      ...decodedCursor,
-      currentRound: nextRound,
-    }),
-    roundData,
-    finished: false,
+    currentQuestion: {
+      audioToken: roundState.audioToken,
+    },
+    options: roundState.options,
+    roundStartedAt: roundState.roundStartedAt,
   };
 };

@@ -21,14 +21,6 @@ const VISITOR_STORAGE_KEY = "musiquiz-visitor";
 
 const isDigitsOnly = (value: string) => /^\d+$/.test(value.trim());
 
-const createVisitorId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return `visitor-${crypto.randomUUID().slice(0, 12)}`;
-  }
-
-  return `visitor-${Math.random().toString(36).slice(2, 12)}`;
-};
-
 const getStoredVisitor = () => {
   if (typeof window === "undefined") {
     return null;
@@ -40,16 +32,13 @@ const getStoredVisitor = () => {
   }
 
   try {
-    const parsed = JSON.parse(raw) as { visitorId?: string; name?: string };
+    const parsed = JSON.parse(raw) as { name?: string };
 
-    if (!parsed.visitorId || !parsed.name) {
+    if (!parsed.name) {
       return null;
     }
 
-    return {
-      visitorId: parsed.visitorId,
-      name: normalizeStudentName(parsed.name),
-    };
+    return normalizeStudentName(parsed.name);
   } catch {
     return null;
   }
@@ -72,7 +61,7 @@ export const StartExperience = ({
   const router = useRouter();
   const {
     state,
-    actions: { setPlayer, beginGame, resetGame, clearPlayer },
+    actions: { beginGame, resetGame, clearPlayer },
   } = useGameSession();
   const [playerInput, setPlayerInput] = useState(
     initialRegistration || state.registration,
@@ -117,7 +106,9 @@ export const StartExperience = ({
       return;
     }
 
-    setPlayerInput(state.registration);
+    setPlayerInput(
+      state.playerType === "visitor" ? state.studentName : state.registration,
+    );
     setResolvedPlayer({
       registration: state.registration,
       name: state.studentName,
@@ -127,7 +118,7 @@ export const StartExperience = ({
 
   useEffect(() => {
     const storedVisitor = getStoredVisitor();
-    setStoredVisitorName(storedVisitor?.name ?? null);
+    setStoredVisitorName(storedVisitor ?? null);
   }, []);
 
   const lookupRegistration = async (value: string) => {
@@ -184,18 +175,9 @@ export const StartExperience = ({
       return;
     }
 
-    const storedVisitor = getStoredVisitor();
-    const registration =
-      storedVisitor &&
-      normalizeStudentName(storedVisitor.name).toLowerCase() ===
-        visitorName.toLowerCase()
-        ? storedVisitor.visitorId
-        : createVisitorId();
-
     window.localStorage.setItem(
       VISITOR_STORAGE_KEY,
       JSON.stringify({
-        visitorId: registration,
         name: visitorName,
       }),
     );
@@ -203,7 +185,7 @@ export const StartExperience = ({
 
     setLookupError(null);
     setResolvedPlayer({
-      registration,
+      registration: "",
       name: visitorName,
       playerType: "visitor",
     });
@@ -263,7 +245,6 @@ export const StartExperience = ({
 
     void (async () => {
       resetGame();
-      setPlayer(player);
       setLookupError(null);
       setIsStartingGame(true);
 
@@ -273,7 +254,12 @@ export const StartExperience = ({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ action: "start" }),
+          body: JSON.stringify({
+            action: "start",
+            registration: player.registration,
+            playerName: player.name,
+            playerType: player.playerType,
+          }),
         });
 
         if (!response.ok) {

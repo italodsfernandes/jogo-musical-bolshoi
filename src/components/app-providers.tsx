@@ -4,12 +4,11 @@ import { ReactNode, useMemo, useReducer } from "react";
 
 import { normalizeStudentName } from "@/features/game/scoring";
 import {
-  AnswerBreakdown,
   GameRoundData,
   GameSessionState,
   PlayerRecord,
-  QuestionOption,
   StartGamePayload,
+  SubmitAnswerPayload,
 } from "@/features/game/types";
 import {
   GameSessionContext,
@@ -22,18 +21,21 @@ export type GameAction =
   | { type: "BEGIN_GAME"; payload: StartGamePayload }
   | {
       type: "SUBMIT_ANSWER";
-      payload: {
-        selectedOption: QuestionOption;
-        breakdown: AnswerBreakdown;
-      };
+      payload: SubmitAnswerPayload;
     }
   | {
       type: "ADVANCE_FLOW";
       payload: {
         currentRound: number;
-        roundCursor: string | null;
         roundData: GameRoundData | null;
         finished: boolean;
+      };
+    }
+  | {
+      type: "MARK_ROUND_STARTED";
+      payload: {
+        currentRound: number;
+        roundStartedAt: number;
       };
     }
   | { type: "SET_SUBMITTING" }
@@ -49,13 +51,13 @@ const createInitialState = (): GameSessionState => ({
   streak: 0,
   phase: "idle",
   currentRound: 0,
-  roundCursor: "",
   totalRounds: 0,
   currentRoundData: null,
   answerResult: null,
   sessionId: null,
   hasSavedScore: false,
   resultSessionId: null,
+  pendingResult: null,
 });
 
 export const gameSessionReducer = (
@@ -79,51 +81,29 @@ export const gameSessionReducer = (
     case "BEGIN_GAME":
       return {
         ...state,
+        registration: action.payload.player.registration,
+        studentName: normalizeStudentName(action.payload.player.name),
+        playerType: action.payload.player.playerType,
         score: 0,
         streak: 0,
         phase: "playing",
         currentRound: action.payload.currentRound,
-        roundCursor: action.payload.roundCursor,
         totalRounds: action.payload.totalRounds,
         currentRoundData: action.payload.roundData,
         answerResult: null,
         sessionId: action.payload.sessionId,
         hasSavedScore: false,
         resultSessionId: null,
+        pendingResult: null,
       };
     case "SUBMIT_ANSWER": {
-      if (!state.currentRoundData) {
-        return state;
-      }
-
-      const correctOption = state.currentRoundData.options.find(
-        (option) =>
-          option.optionId === state.currentRoundData?.currentQuestion.answerKey,
-      );
-
-      if (!correctOption) {
-        return state;
-      }
-
-      const isCorrect =
-        action.payload.selectedOption.optionId ===
-        state.currentRoundData.currentQuestion.answerKey;
-      const nextStreak = isCorrect ? state.streak + 1 : 0;
-
       return {
         ...state,
-        score: state.score + action.payload.breakdown.total,
-        streak: nextStreak,
+        score: action.payload.score,
+        streak: action.payload.answerResult.streak,
         phase: "revealed",
-        answerResult: {
-          status: isCorrect ? "correct" : "wrong",
-          correctComposer: correctOption.composer,
-          correctMusic: correctOption.music,
-          selectedComposer: action.payload.selectedOption.composer,
-          selectedMusic: action.payload.selectedOption.music,
-          breakdown: action.payload.breakdown,
-          streak: nextStreak,
-        },
+        answerResult: action.payload.answerResult,
+        pendingResult: action.payload.result,
       };
     }
     case "ADVANCE_FLOW": {
@@ -135,7 +115,6 @@ export const gameSessionReducer = (
         return {
           ...state,
           currentRound: state.totalRounds,
-          roundCursor: "",
           phase: "finished",
           currentRoundData: null,
           answerResult: null,
@@ -145,12 +124,28 @@ export const gameSessionReducer = (
       return {
         ...state,
         currentRound: action.payload.currentRound,
-        roundCursor: action.payload.roundCursor ?? "",
         currentRoundData: action.payload.roundData,
         phase: "playing",
         answerResult: null,
+        pendingResult: null,
       };
     }
+    case "MARK_ROUND_STARTED":
+      if (
+        state.phase !== "playing" ||
+        state.currentRound !== action.payload.currentRound ||
+        !state.currentRoundData
+      ) {
+        return state;
+      }
+
+      return {
+        ...state,
+        currentRoundData: {
+          ...state.currentRoundData,
+          roundStartedAt: action.payload.roundStartedAt,
+        },
+      };
     case "SET_SUBMITTING":
       return {
         ...state,
@@ -161,6 +156,7 @@ export const gameSessionReducer = (
         ...state,
         hasSavedScore: true,
         resultSessionId: action.payload.resultSessionId,
+        pendingResult: null,
       };
     case "RESET_GAME":
       return createInitialState();
@@ -187,6 +183,8 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
         beginGame: (payload) => dispatch({ type: "BEGIN_GAME", payload }),
         submitAnswer: (payload) => dispatch({ type: "SUBMIT_ANSWER", payload }),
         advanceFlow: (payload) => dispatch({ type: "ADVANCE_FLOW", payload }),
+        markRoundStarted: (payload) =>
+          dispatch({ type: "MARK_ROUND_STARTED", payload }),
         setSubmitting: () => dispatch({ type: "SET_SUBMITTING" }),
         markSaved: (resultSessionId) =>
           dispatch({ type: "MARK_SAVED", payload: { resultSessionId } }),

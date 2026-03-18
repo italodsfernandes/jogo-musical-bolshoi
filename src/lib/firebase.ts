@@ -9,6 +9,7 @@ import {
 } from "@/features/game/leaderboard";
 import {
   BestScoreEntry,
+  GameSessionRecord,
   PersistedResultResponse,
   PlayerType,
   ResultSnapshot,
@@ -59,8 +60,18 @@ const dbSet = async <T>(path: string, value: T): Promise<void> => {
   await getDatabase().ref(path).set(value);
 };
 
+const dbDelete = async (path: string): Promise<void> => {
+  await getDatabase().ref(path).remove();
+};
+
 const getPlayerType = (playerType: PlayerType | undefined): PlayerType =>
   playerType === "visitor" ? "visitor" : "student";
+
+const toFiniteNumber = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
+
+const toNullableFiniteNumber = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 const normalizePlayerRegistration = (
   registration: string,
@@ -81,6 +92,33 @@ const toBestScoreEntry = (entry: BestScoreEntry) => ({
 const toResultSnapshot = (entry: ResultSnapshot): ResultSnapshot => ({
   ...entry,
   playerType: getPlayerType(entry.playerType),
+});
+
+const sanitizeGameSession = (session: GameSessionRecord): GameSessionRecord => ({
+  ...session,
+  playerType: getPlayerType(session.playerType),
+  currentRound: toFiniteNumber(session.currentRound, 1),
+  totalRounds: toFiniteNumber(session.totalRounds, 0),
+  score: toFiniteNumber(session.score, 0),
+  streak: toFiniteNumber(session.streak, 0),
+  finishedAt: toNullableFiniteNumber(session.finishedAt),
+  resultSessionId:
+    typeof session.resultSessionId === "string" && session.resultSessionId
+      ? session.resultSessionId
+      : null,
+  currentRoundState: session.currentRoundState
+    ? {
+        ...session.currentRoundState,
+        roundStartedAt: toNullableFiniteNumber(
+          session.currentRoundState.roundStartedAt,
+        ),
+        answeredAt: toNullableFiniteNumber(session.currentRoundState.answeredAt),
+        selectedOptionId:
+          typeof session.currentRoundState.selectedOptionId === "string"
+            ? session.currentRoundState.selectedOptionId
+            : null,
+      }
+    : null,
 });
 
 export const getLeaderboard = async (filter: "all" | "student" = "all") => {
@@ -114,6 +152,25 @@ export const getResultSnapshot = async (sessionId: string) => {
   return fallbackResult ? toResultSnapshot(fallbackResult) : fallbackResult;
 };
 
+export const getGameSession = async (sessionId: string) => {
+  const session = await dbGet<GameSessionRecord>(
+    resolveScorePath(`gameSessions/${sessionId}`),
+  );
+
+  return session ? sanitizeGameSession(session) : session;
+};
+
+export const saveGameSession = async (session: GameSessionRecord) => {
+  await dbSet(
+    resolveScorePath(`gameSessions/${session.sessionId}`),
+    sanitizeGameSession(session),
+  );
+};
+
+export const deleteGameSession = async (sessionId: string) => {
+  await dbDelete(resolveScorePath(`gameSessions/${sessionId}`));
+};
+
 export const persistResultSnapshot = async ({
   registration,
   studentName,
@@ -129,6 +186,7 @@ export const persistResultSnapshot = async ({
   sessionId: string;
   origin: string;
 }): Promise<PersistedResultResponse> => {
+  const safeScore = toFiniteNumber(score, 0);
   const normalizedRegistration = normalizePlayerRegistration(
     registration,
     playerType,
@@ -144,14 +202,14 @@ export const persistResultSnapshot = async ({
   const existingBest = await dbGet<BestScoreEntry>(
     resolveScorePath(`bestScores/${normalizedRegistration}`)
   );
-  const isPersonalBest = shouldUpdateBestScore(existingBest, score);
+  const isPersonalBest = shouldUpdateBestScore(existingBest, safeScore);
 
   if (isPersonalBest) {
     const bestEntry: BestScoreEntry = {
       registration: normalizedRegistration,
       studentName,
       playerType,
-      score,
+      score: safeScore,
       finishedAt,
       sessionId,
     };
@@ -167,7 +225,7 @@ export const persistResultSnapshot = async ({
     registration: normalizedRegistration,
     studentName,
     playerType,
-    score,
+    score: safeScore,
     finishedAt,
     sessionId,
   };
@@ -178,8 +236,8 @@ export const persistResultSnapshot = async ({
     registration: normalizedRegistration,
     studentName,
     playerType,
-    score,
-    title: getScoreTitle(score),
+    score: safeScore,
+    title: getScoreTitle(safeScore),
     position: position || leaderboard.length + 1,
     shareUrl,
     finishedAt,

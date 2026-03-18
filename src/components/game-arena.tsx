@@ -4,18 +4,21 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "framer-motion";
 import { LoaderCircleIcon, PauseIcon, PlayIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SiteCredit } from "@/components/site-credit";
 import { Button } from "@/components/ui/button";
-import { calculateRoundBreakdown } from "@/features/game/scoring";
+import {
+  MAX_SPEED_BONUS_WINDOW_MS,
+  calculateSpeedBonus,
+} from "@/features/game/scoring";
 import { useHowlerPlayer } from "@/features/game/use-howler-player";
 import { useGameSession } from "@/features/game/use-game-session";
 import {
   NextRoundPayload,
-  PersistedResultResponse,
   QuestionOption,
+  SubmitAnswerPayload,
 } from "@/features/game/types";
 
 const REVEAL_DELAY_MS = 2300;
@@ -35,22 +38,37 @@ export const GameArena = () => {
   const {
     isHydrated,
     state,
-    actions: { submitAnswer, advanceFlow, markSaved, resetGame },
+    actions: {
+      submitAnswer,
+      advanceFlow,
+      markRoundStarted,
+      markSaved,
+      resetGame,
+    },
   } = useGameSession();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [roundAdvanceError, setRoundAdvanceError] = useState<string | null>(null);
+  const [isAnswering, setIsAnswering] = useState(false);
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const [roundAdvanceError, setRoundAdvanceError] = useState<string | null>(
+    null,
+  );
   const [displayScore, setDisplayScore] = useState(0);
   const [isScoreSparkling, setIsScoreSparkling] = useState(false);
+  const [roundElapsedMs, setRoundElapsedMs] = useState(0);
   const [roundStatuses, setRoundStatuses] = useState<
-    Array<"correct" | "wrong" | null>
+    Array<"correct" | "wrong" | "skipped" | null>
   >([]);
   const prevScoreRef = useRef(0);
   const registeredRevealRoundRef = useRef<number | null>(null);
+  const roundStartRequestRef = useRef<number | null>(null);
 
   const currentQuestion = state.currentRoundData?.currentQuestion ?? null;
+  const currentAudioToken = currentQuestion?.audioToken ?? null;
   const options = state.currentRoundData?.options ?? [];
   const player = useHowlerPlayer(currentQuestion);
+  const hasStartedCurrentRound =
+    player.hasStarted && player.lastStartedAudioToken === currentAudioToken;
 
   useEffect(() => {
     if (!isHydrated) {
@@ -128,7 +146,12 @@ export const GameArena = () => {
   }, [state.answerResult, state.currentRound, state.phase]);
 
   useEffect(() => {
-    if (reduceMotion || state.phase !== "finished" || state.score <= 4500) {
+    if (
+      reduceMotion ||
+      state.phase !== "revealed" ||
+      !state.pendingResult ||
+      state.score <= 4500
+    ) {
       return;
     }
 
@@ -140,7 +163,7 @@ export const GameArena = () => {
       origin: { y: 0.65 },
       colors: ["#B0945A", "#D4AF37", "#FFD700", "#0A4A4A"],
     });
-  }, [reduceMotion, state.phase, state.score]);
+  }, [reduceMotion, state.pendingResult, state.phase, state.score]);
 
   useEffect(() => {
     const from = prevScoreRef.current;
@@ -208,7 +231,7 @@ export const GameArena = () => {
   }, [state.phase]);
 
   useEffect(() => {
-    if (state.phase !== "revealed") {
+    if (state.phase !== "revealed" || state.pendingResult || !state.sessionId) {
       return;
     }
 
@@ -226,7 +249,8 @@ export const GameArena = () => {
             },
             body: JSON.stringify({
               action: "next",
-              roundCursor: state.roundCursor,
+              sessionId: state.sessionId,
+              currentRound: state.currentRound,
             }),
           });
 
@@ -251,23 +275,123 @@ export const GameArena = () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [advanceFlow, state.phase, state.roundCursor]);
+  }, [
+    advanceFlow,
+    state.currentRound,
+    state.pendingResult,
+    state.phase,
+    state.sessionId,
+  ]);
 
   useEffect(() => {
     if (state.phase === "playing") {
       setRoundAdvanceError(null);
+      setAnswerError(null);
     }
   }, [state.phase]);
 
   useEffect(() => {
+    roundStartRequestRef.current = null;
+  }, [currentAudioToken]);
+
+  useEffect(() => {
+    const roundStartedAt = state.currentRoundData?.roundStartedAt;
+
     if (
-      state.phase !== "finished" ||
-      state.hasSavedScore ||
-      !state.registration ||
-      !state.studentName ||
-      !state.playerType ||
-      !state.sessionId
+      state.phase !== "playing" ||
+      !state.sessionId ||
+      !hasStartedCurrentRound ||
+      roundStartedAt !== null
     ) {
+      return;
+    }
+
+    if (roundStartRequestRef.current === state.currentRound) {
+      return;
+    }
+
+    roundStartRequestRef.current = state.currentRound;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/game", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "play",
+            sessionId: state.sessionId,
+            currentRound: state.currentRound,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Nao foi possivel iniciar a contagem da rodada.");
+        }
+
+        const payload = (await response.json()) as { roundStartedAt: number };
+
+        if (!cancelled) {
+          setAnswerError(null);
+          markRoundStarted({
+            currentRound: state.currentRound,
+            roundStartedAt: payload.roundStartedAt,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setAnswerError(
+            "Não conseguimos iniciar a rodada. Tente tocar novamente.",
+          );
+        }
+      } finally {
+        if (roundStartRequestRef.current === state.currentRound) {
+          roundStartRequestRef.current = null;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentAudioToken,
+    hasStartedCurrentRound,
+    markRoundStarted,
+    state.currentRound,
+    state.currentRoundData?.roundStartedAt,
+    state.phase,
+    state.sessionId,
+  ]);
+
+  useEffect(() => {
+    const roundStartedAt = state.currentRoundData?.roundStartedAt ?? null;
+
+    if (state.phase !== "playing" || roundStartedAt === null) {
+      setRoundElapsedMs(0);
+      return;
+    }
+
+    let frame = 0;
+
+    const syncElapsed = () => {
+      setRoundElapsedMs(Math.max(0, Date.now() - roundStartedAt));
+      frame = window.requestAnimationFrame(syncElapsed);
+    };
+
+    syncElapsed();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [state.currentRoundData, state.phase]);
+
+  useEffect(() => {
+    const pendingResult = state.pendingResult;
+
+    if (state.phase !== "revealed" || state.hasSavedScore || !pendingResult) {
       return;
     }
 
@@ -278,32 +402,16 @@ export const GameArena = () => {
       setSaveError(null);
 
       try {
-        const response = await fetch("/api/results", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            registration: state.registration,
-            studentName: state.studentName,
-            playerType: state.playerType,
-            score: state.score,
-            sessionId: state.sessionId,
-          }),
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, REVEAL_DELAY_MS);
         });
-
-        if (!response.ok) {
-          throw new Error("Nao foi possivel persistir o resultado.");
-        }
-
-        const result = (await response.json()) as PersistedResultResponse;
 
         if (cancelled) {
           return;
         }
 
-        markSaved(result.sessionId);
-        router.replace(`/resultado/${result.sessionId}`);
+        markSaved(pendingResult.sessionId);
+        router.replace(`/resultado/${pendingResult.sessionId}`);
       } catch {
         if (!cancelled) {
           setSaveError("Não conseguimos salvar. Tente de novo.");
@@ -325,11 +433,7 @@ export const GameArena = () => {
     router,
     state.hasSavedScore,
     state.phase,
-    state.playerType,
-    state.registration,
-    state.score,
-    state.sessionId,
-    state.studentName,
+    state.pendingResult,
   ]);
 
   if (!isHydrated || !currentQuestion) {
@@ -360,36 +464,82 @@ export const GameArena = () => {
     );
   }
 
-  const currentTimePercent =
-    player.durationMs > 0
-      ? (player.currentTimeMs / player.durationMs) * 100
-      : 0;
+  const timerProgressPercent = Math.max(
+    0,
+    100 -
+      (Math.min(roundElapsedMs, MAX_SPEED_BONUS_WINDOW_MS) /
+        MAX_SPEED_BONUS_WINDOW_MS) *
+        100,
+  );
+  const currentSpeedBonus = calculateSpeedBonus(roundElapsedMs);
+  const hasServerStartedRound = state.currentRoundData?.roundStartedAt !== null;
+  const visibleSpeedBonus = hasServerStartedRound ? currentSpeedBonus : 300;
   const isAudioLoading =
     state.phase === "playing" && !player.isReady && !player.hasLoadError;
-  const canToggleAudio = state.phase === "playing" && player.isReady;
-
-  const handleAnswer = (selectedOption: QuestionOption) => {
-    if (state.phase !== "playing" || !currentQuestion) {
+  const canToggleAudio =
+    state.phase === "playing" && player.isReady && !isAnswering;
+  const canAnswerCurrentRound =
+    state.phase === "playing" &&
+    hasStartedCurrentRound &&
+    hasServerStartedRound &&
+    !isAnswering;
+  const primePlayerAudio = () => {
+    if (!canToggleAudio) {
       return;
     }
 
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    player.primeAudio();
+  };
+  const handlePlayButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    primePlayerAudio();
+  };
+
+  const handleAnswer = async (selectedOption: QuestionOption | null) => {
+    if (state.phase !== "playing" || !state.sessionId || isAnswering) {
+      return;
+    }
+
+    if (
+      selectedOption &&
+      typeof navigator !== "undefined" &&
+      "vibrate" in navigator
+    ) {
       navigator.vibrate(10);
     }
 
     player.stop();
+    setIsAnswering(true);
+    setAnswerError(null);
 
-    const breakdown = calculateRoundBreakdown({
-      isCorrect: selectedOption.optionId === currentQuestion.answerKey,
-      elapsedMs: player.currentTimeMs,
-      hasReplayed: player.playCount > 1,
-      currentStreak: state.streak,
-    });
+    try {
+      const response = await fetch("/api/game", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "answer",
+          sessionId: state.sessionId,
+          currentRound: state.currentRound,
+          selectedOptionId: selectedOption?.optionId ?? null,
+        }),
+      });
 
-    submitAnswer({
-      selectedOption,
-      breakdown,
-    });
+      if (!response.ok) {
+        throw new Error("Nao foi possivel validar a resposta.");
+      }
+
+      const payload = (await response.json()) as SubmitAnswerPayload;
+      submitAnswer(payload);
+    } catch {
+      setAnswerError("Não conseguimos validar a rodada. Tente novamente.");
+    } finally {
+      setIsAnswering(false);
+    }
   };
 
   const OPTION_IDLE_CLASSES = [
@@ -429,7 +579,7 @@ export const GameArena = () => {
     const status = roundStatuses[index];
 
     if (isPast) {
-      if (status === "wrong") {
+      if (status === "wrong" || status === "skipped") {
         return "bg-[hsl(var(--destructive))]";
       }
 
@@ -439,7 +589,8 @@ export const GameArena = () => {
     if (
       isCurrent &&
       state.phase === "revealed" &&
-      state.answerResult?.status === "wrong"
+      (state.answerResult?.status === "wrong" ||
+        state.answerResult?.status === "skipped")
     ) {
       return "bg-[hsl(var(--destructive))]";
     }
@@ -519,7 +670,9 @@ export const GameArena = () => {
                   <p className="mt-2 text-lg font-bold text-[hsl(var(--primary))]">
                     {state.answerResult.status === "correct"
                       ? `Bravo! +${state.answerResult.breakdown.total} pts`
-                      : `Era ${state.answerResult.correctComposer}`}
+                      : state.answerResult.status === "skipped"
+                        ? "Pulou · 0 pts"
+                        : `Era ${state.answerResult.correctComposer}`}
                   </p>
                   <p className="mt-1 text-sm text-[rgba(18,33,34,0.7)]">
                     {state.answerResult.correctMusic}
@@ -543,7 +696,13 @@ export const GameArena = () => {
             {/* Play button */}
             <motion.button
               type="button"
-              onClick={() => player.toggle(canToggleAudio)}
+              onPointerDown={primePlayerAudio}
+              onTouchStart={primePlayerAudio}
+              onMouseDown={primePlayerAudio}
+              onKeyDown={handlePlayButtonKeyDown}
+              onClick={() => {
+                player.toggle(canToggleAudio);
+              }}
               disabled={!canToggleAudio}
               aria-label={
                 state.phase !== "playing"
@@ -586,10 +745,13 @@ export const GameArena = () => {
                 <div
                   className="progress-fill"
                   style={{
-                    width: `${Math.min(currentTimePercent || 0, 100)}%`,
+                    width: `${Math.min(timerProgressPercent || 0, 100)}%`,
                   }}
                 />
               </div>
+              <p className="mt-2 text-center text-sm font-bold text-[hsl(var(--primary))]">
+                Bônus: +{visibleSpeedBonus}
+              </p>
             </div>
 
             <p
@@ -614,11 +776,11 @@ export const GameArena = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06, duration: 0.25 }}
-              onClick={() => handleAnswer(option)}
-              disabled={state.phase !== "playing" || !player.hasStarted}
-              tabIndex={
-                state.phase !== "playing" || !player.hasStarted ? -1 : 0
-              }
+              onClick={() => {
+                void handleAnswer(option);
+              }}
+              disabled={!canAnswerCurrentRound}
+              tabIndex={canAnswerCurrentRound ? 0 : -1}
               aria-label={`Responder: ${option.music} — ${option.composer}`}
               whileTap={{ scale: 0.95 }}
               className={`game-btn game-btn--small ${getOptionStyle(option, index)}`}
@@ -635,55 +797,93 @@ export const GameArena = () => {
 
         <p
           className={`mt-3 min-h-6 text-base text-[rgba(18,33,34,0.58)] transition-opacity duration-200 ${
+            answerError ||
             state.phase === "revealed" ||
             (state.phase === "playing" &&
-              (player.hasLoadError || !player.isReady || !player.hasStarted))
+              (player.hasLoadError ||
+                !player.isReady ||
+                !canAnswerCurrentRound ||
+                isAnswering))
               ? "opacity-100"
               : "opacity-0"
           }`}
         >
-          {state.phase === "revealed" ? (
-            roundAdvanceError ?? "Próxima..."
+          {answerError ? (
+            answerError
+          ) : state.phase === "revealed" ? (
+            (roundAdvanceError ?? "Próxima...")
+          ) : state.phase === "playing" && isAnswering ? (
+            "Validando resposta..."
           ) : state.phase === "playing" && player.hasLoadError ? (
-            "Não foi possível carregar este trecho."
+            "Falhou o áudio."
           ) : state.phase === "playing" && !player.isReady ? (
             "Carregando áudio..."
-          ) : state.phase === "playing" && !player.hasStarted ? (
-            "Ouça antes de responder"
+          ) : state.phase === "playing" && !hasStartedCurrentRound ? (
+            "Dá play"
+          ) : state.phase === "playing" && !hasServerStartedRound ? (
+            "Valendo..."
           ) : (
             <span aria-hidden="true">&nbsp;</span>
           )}
         </p>
 
-        {/* Saving/error state */}
-        {(isSaving || saveError) && state.phase === "finished" && (
-          <div className="fixed inset-x-0 bottom-6 z-20 mx-auto w-[calc(100%-2rem)] max-w-sm rounded-xl bg-white/90 p-4 text-center shadow-lg backdrop-blur-sm">
-            {isSaving ? (
-              <div className="flex items-center justify-center gap-2">
-                <LoaderCircleIcon className="h-5 w-5 animate-spin text-[hsl(var(--accent))]" />
-                <span className="text-base font-medium">Salvando...</span>
-              </div>
-            ) : saveError ? (
-              <div>
-                <p className="text-base font-medium text-red-600">
-                  {saveError}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => {
-                    setSaveError(null);
-                    resetGame();
-                    router.push("/");
-                  }}
-                >
-                  Voltar ao inicio
-                </Button>
-              </div>
-            ) : null}
+        {state.phase === "playing" && player.hasLoadError ? (
+          <div className="mt-3 flex w-full max-w-sm gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                player.reload();
+              }}
+              disabled={isAnswering}
+            >
+              Tentar novamente
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              onClick={() => {
+                void handleAnswer(null);
+              }}
+              disabled={isAnswering}
+            >
+              Pular sem pontuar
+            </Button>
           </div>
-        )}
+        ) : null}
+
+        {/* Saving/error state */}
+        {(isSaving || saveError) &&
+          state.phase === "revealed" &&
+          state.pendingResult && (
+            <div className="fixed inset-x-0 bottom-6 z-20 mx-auto w-[calc(100%-2rem)] max-w-sm rounded-xl bg-white/90 p-4 text-center shadow-lg backdrop-blur-sm">
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <LoaderCircleIcon className="h-5 w-5 animate-spin text-[hsl(var(--accent))]" />
+                  <span className="text-base font-medium">Salvando...</span>
+                </div>
+              ) : saveError ? (
+                <div>
+                  <p className="text-base font-medium text-red-600">
+                    {saveError}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      setSaveError(null);
+                      resetGame();
+                      router.push("/");
+                    }}
+                  >
+                    Voltar ao inicio
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          )}
       </div>
 
       <SiteCredit />

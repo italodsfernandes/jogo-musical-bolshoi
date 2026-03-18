@@ -14,13 +14,11 @@ describe("game scoring", () => {
     const instantBreakdown = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 0,
-      hasReplayed: false,
       currentStreak: 0,
     });
     const slowBreakdown = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 12_000,
-      hasReplayed: false,
       currentStreak: 0,
     });
 
@@ -30,12 +28,19 @@ describe("game scoring", () => {
     );
   });
 
-  it("reduces the speed bonus in 10 point steps per second", () => {
+  it("reduces the speed bonus by 1 point every 100ms", () => {
+    expect(
+      calculateRoundBreakdown({
+        isCorrect: true,
+        elapsedMs: 100,
+        currentStreak: 0,
+      }).speedBonus
+    ).toBe(299);
+
     expect(
       calculateRoundBreakdown({
         isCorrect: true,
         elapsedMs: 1_000,
-        hasReplayed: false,
         currentStreak: 0,
       }).speedBonus
     ).toBe(290);
@@ -44,7 +49,6 @@ describe("game scoring", () => {
       calculateRoundBreakdown({
         isCorrect: true,
         elapsedMs: 5_000,
-        hasReplayed: false,
         currentStreak: 0,
       }).speedBonus
     ).toBe(250);
@@ -55,34 +59,20 @@ describe("game scoring", () => {
       calculateRoundBreakdown({
         isCorrect: true,
         elapsedMs: 35_000,
-        hasReplayed: false,
         currentStreak: 0,
       }).speedBonus
     ).toBe(0);
-  });
-
-  it("removes the speed bonus after the second play", () => {
-    const replayedBreakdown = calculateRoundBreakdown({
-      isCorrect: true,
-      elapsedMs: 1_000,
-      hasReplayed: true,
-      currentStreak: 0,
-    });
-
-    expect(replayedBreakdown.speedBonus).toBe(0);
   });
 
   it("gives the same speed bonus for equal elapsed time regardless of track duration", () => {
     const firstBreakdown = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 4_000,
-      hasReplayed: false,
       currentStreak: 0,
     });
     const secondBreakdown = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 4_000,
-      hasReplayed: false,
       currentStreak: 0,
     });
 
@@ -94,19 +84,16 @@ describe("game scoring", () => {
     const secondStreak = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 1_000,
-      hasReplayed: false,
       currentStreak: 1,
     });
     const thirdStreak = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 1_000,
-      hasReplayed: false,
       currentStreak: 2,
     });
     const longStreak = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 1_000,
-      hasReplayed: false,
       currentStreak: 6,
     });
 
@@ -119,7 +106,6 @@ describe("game scoring", () => {
     const breakdown = calculateRoundBreakdown({
       isCorrect: true,
       elapsedMs: 2_000,
-      hasReplayed: false,
       currentStreak: 1,
     });
 
@@ -136,14 +122,13 @@ describe("game scoring", () => {
       calculateRoundBreakdown({
         isCorrect: false,
         elapsedMs: 4_000,
-        hasReplayed: false,
         currentStreak: 2,
       })
     ).toEqual({
       baseCorrect: 0,
       speedBonus: 0,
       streakBonus: 0,
-        total: 0,
-      });
+      total: 0,
+    });
   });
 });
