@@ -26,9 +26,11 @@ const assertActiveSession = (session: GameSessionRecord) => {
 
 export const createGameSession = ({
   player,
+  sessionId = createSessionId(),
   now = Date.now(),
 }: {
   player: PlayerRecord;
+  sessionId?: string;
   now?: number;
 }): {
   session: GameSessionRecord;
@@ -36,7 +38,6 @@ export const createGameSession = ({
 } => {
   void now;
   const questionOrder = buildQuestionOrder();
-  const sessionId = createSessionId();
   const currentRound = 1;
   const roundState = createRoundState(questionOrder, currentRound);
 

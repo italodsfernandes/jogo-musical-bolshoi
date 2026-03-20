@@ -107,7 +107,7 @@ export const ResultActions = ({
         }}
       >
         <HouseIcon className="h-4 w-4" />
-        Jogar novamente
+        Voltar ao início
       </Button>
     </div>
   );

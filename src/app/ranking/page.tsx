@@ -10,18 +10,8 @@ export const dynamic = "force-dynamic";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-interface RankingPageProps {
-  searchParams: Promise<{
-    tab?: string;
-  }>;
-}
-
-export default async function RankingPage({ searchParams }: RankingPageProps) {
-  const params = await searchParams;
-  const activeTab = params.tab === "alunos" ? "alunos" : "global";
-  const leaderboard = await getLeaderboard(
-    activeTab === "alunos" ? "student" : "all",
-  ).catch(() => []);
+export default async function RankingPage() {
+  const leaderboard = await getLeaderboard("student").catch(() => []);
   const topTenLeaderboard = leaderboard.slice(0, 10);
   const podium = topTenLeaderboard.slice(0, 3);
   const rest = topTenLeaderboard.slice(3);
@@ -41,31 +31,8 @@ export default async function RankingPage({ searchParams }: RankingPageProps) {
           Ranking
         </h1>
         <p className="mt-1 text-center text-sm text-[rgba(255,248,230,0.6)]">
-          {activeTab === "alunos" ? "Alunos Bolshoi" : "Todos os participantes"}
+          Alunos Bolshoi
         </p>
-
-        <div className="mt-5 flex w-full max-w-sm rounded-2xl border border-[rgba(255,248,230,0.14)] bg-[rgba(255,248,230,0.06)] p-1">
-          <Link
-            href="/ranking?tab=alunos"
-            className={`flex-1 rounded-xl px-4 py-2 text-center text-sm font-semibold transition-colors ${
-              activeTab === "alunos"
-                ? "bg-[hsl(var(--accent))] text-[hsl(var(--primary))]"
-                : "text-[rgba(255,248,230,0.78)] hover:bg-[rgba(255,248,230,0.08)]"
-            }`}
-          >
-            Alunos
-          </Link>
-          <Link
-            href="/ranking?tab=global"
-            className={`flex-1 rounded-xl px-4 py-2 text-center text-sm font-semibold transition-colors ${
-              activeTab === "global"
-                ? "bg-[hsl(var(--accent))] text-[hsl(var(--primary))]"
-                : "text-[rgba(255,248,230,0.78)] hover:bg-[rgba(255,248,230,0.08)]"
-            }`}
-          >
-            Geral
-          </Link>
-        </div>
 
         <div className="mt-5 flex w-full max-w-sm items-end justify-center gap-3">
           {[1, 0, 2].map((podiumIndex) => {

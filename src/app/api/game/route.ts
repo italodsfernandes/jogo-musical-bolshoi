@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import {
@@ -10,32 +7,24 @@ import {
   submitAnswerForSession,
 } from "@/features/game/session";
 import {
+  createSessionId,
   normalizeRegistration,
-  normalizeStudentName,
 } from "@/features/game/scoring";
-import { PlayerType } from "@/features/game/types";
 import {
+  finalizeStudentAttempt,
   getGameSession,
   persistResultSnapshot,
+  releaseReservedStudentAttempt,
+  reserveStudentAttempt,
   saveGameSession,
 } from "@/lib/firebase";
 import { findStudentByRegistration } from "@/lib/students";
 
-const VISITOR_COOKIE_NAME = "musiquiz-visitor-id";
-const VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
-
-const isPlayerType = (value: unknown): value is PlayerType =>
-  value === "student" || value === "visitor";
-
 const isValidCurrentRound = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= 1;
 
-const createVisitorRegistration = () =>
-  `visitor-${randomUUID().replace(/-/g, "").slice(0, 12)}`;
-
 const requestErrorMessages = new Set([
   "Matricula de aluno invalida.",
-  "Use pelo menos 2 letras no nome.",
   "Rodada fora de ordem.",
   "A rodada atual ainda nao foi respondida.",
   "Esta rodada ja foi respondida.",
@@ -59,78 +48,60 @@ export async function POST(request: Request) {
     };
 
     if (payload.action === "start") {
-      if (!isPlayerType(payload.playerType)) {
+      if (payload.playerType !== "student") {
         return NextResponse.json(
-          { message: "Tipo de jogador invalido." },
+          { message: "Apenas alunos podem jogar." },
           { status: 400 },
         );
       }
 
-      const cookieStore = await cookies();
-
-      if (payload.playerType === "student") {
-        const normalizedRegistration = normalizeRegistration(
-          typeof payload.registration === "string" ? payload.registration : "",
-        );
-        const student = findStudentByRegistration(normalizedRegistration);
-
-        if (!normalizedRegistration || !student) {
-          return NextResponse.json(
-            { message: "Matricula de aluno invalida." },
-            { status: 400 },
-          );
-        }
-
-        const { session, payload: startPayload } = createGameSession({
-          player: {
-            registration: student.registration,
-            name: student.name,
-            playerType: "student",
-          },
-        });
-
-        await saveGameSession(session);
-        return NextResponse.json(startPayload);
-      }
-
-      const visitorName = normalizeStudentName(
-        typeof payload.playerName === "string" ? payload.playerName : "",
+      const normalizedRegistration = normalizeRegistration(
+        typeof payload.registration === "string" ? payload.registration : "",
       );
+      const student = findStudentByRegistration(normalizedRegistration);
 
-      if (visitorName.length < 2) {
+      if (!normalizedRegistration || !student) {
         return NextResponse.json(
-          { message: "Use pelo menos 2 letras no nome." },
+          { message: "Matricula de aluno invalida." },
           { status: 400 },
         );
       }
 
-      const storedVisitorId = cookieStore.get(VISITOR_COOKIE_NAME)?.value ?? "";
-      const visitorRegistration = storedVisitorId.startsWith("visitor-")
-        ? storedVisitorId
-        : createVisitorRegistration();
+      const sessionId = createSessionId();
+      const reservation = await reserveStudentAttempt({
+        registration: student.registration,
+        sessionId,
+      });
+
+      if (!reservation.reserved || !reservation.attempt) {
+        return NextResponse.json(
+          {
+            message: "Limite de 3 jogadas atingido.",
+            ...reservation.summary,
+          },
+          { status: 409 },
+        );
+      }
 
       const { session, payload: startPayload } = createGameSession({
         player: {
-          registration: visitorRegistration,
-          name: visitorName,
-          playerType: "visitor",
+          registration: student.registration,
+          name: student.name,
+          playerType: "student",
         },
+        sessionId,
       });
 
-      await saveGameSession(session);
-
-      const response = NextResponse.json(startPayload);
-      response.cookies.set({
-        name: VISITOR_COOKIE_NAME,
-        value: visitorRegistration,
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: VISITOR_COOKIE_MAX_AGE,
-      });
-
-      return response;
+      try {
+        await saveGameSession(session);
+        return NextResponse.json(startPayload);
+      } catch (error) {
+        await releaseReservedStudentAttempt({
+          registration: student.registration,
+          sessionId,
+        });
+        throw error;
+      }
     }
 
     if (payload.action === "play") {
@@ -213,6 +184,12 @@ export async function POST(request: Request) {
         score: updatedSession.score,
         sessionId: updatedSession.sessionId,
         origin,
+      });
+      await finalizeStudentAttempt({
+        registration: updatedSession.registration,
+        sessionId: updatedSession.sessionId,
+        score: updatedSession.score,
+        finishedAt: result.finishedAt,
       });
 
       await saveGameSession({

@@ -6,6 +6,34 @@ export interface StudentRecord {
 
 export type PlayerType = "student" | "visitor";
 
+export interface StudentAttemptEntry {
+  sessionId: string;
+  attemptNumber: number;
+  startedAt: number;
+  finishedAt: number | null;
+  score: number | null;
+}
+
+export interface StudentAttemptSummary {
+  attemptsUsed: number;
+  attemptsRemaining: number;
+  maxAttempts: number;
+  isBlocked: boolean;
+  bestScore: number | null;
+  rankingPosition: number | null;
+  attemptHistory: StudentAttemptEntry[];
+}
+
+export interface StudentLookupResponse extends StudentAttemptSummary {
+  found: boolean;
+  registration?: string;
+  name?: string;
+}
+
+export interface StartBlockedResponse extends StudentAttemptSummary {
+  message: string;
+}
+
 export interface PlayerRecord {
   registration: string;
   name: string;
@@ -148,4 +176,10 @@ export interface GameSessionRecord {
   status: "active" | "finished";
   finishedAt: number | null;
   resultSessionId: string | null;
+}
+
+export interface StudentStatsRecord {
+  attemptsUsed: number;
+  maxAttempts: number;
+  attemptsBySessionId: Record<string, StudentAttemptEntry>;
 }

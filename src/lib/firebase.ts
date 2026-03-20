@@ -13,10 +13,15 @@ import {
   PersistedResultResponse,
   PlayerType,
   ResultSnapshot,
+  StudentAttemptEntry,
+  StudentAttemptSummary,
+  StudentStatsRecord,
 } from "@/features/game/types";
 import { getScoreTitle, normalizeRegistration } from "@/features/game/scoring";
 
 const scoreNamespace = process.env.FIREBASE_SCORE_NAMESPACE?.trim();
+
+export const MAX_STUDENT_ATTEMPTS = 3;
 
 const getApp = (): admin.app.App => {
   if (admin.apps.length > 0) {
@@ -30,7 +35,9 @@ const getApp = (): admin.app.App => {
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   const credential = serviceAccountKey
-    ? admin.credential.cert(JSON.parse(serviceAccountKey) as admin.ServiceAccount)
+    ? admin.credential.cert(
+        JSON.parse(serviceAccountKey) as admin.ServiceAccount,
+      )
     : admin.credential.applicationDefault();
 
   return admin.initializeApp({ credential, databaseURL });
@@ -121,9 +128,102 @@ const sanitizeGameSession = (session: GameSessionRecord): GameSessionRecord => (
     : null,
 });
 
-export const getLeaderboard = async (filter: "all" | "student" = "all") => {
+const sanitizeAttemptEntry = (
+  sessionId: string,
+  entry: Partial<StudentAttemptEntry> | null | undefined,
+): StudentAttemptEntry => ({
+  sessionId,
+  attemptNumber: Math.max(1, toFiniteNumber(entry?.attemptNumber, 1)),
+  startedAt: toFiniteNumber(entry?.startedAt, 0),
+  finishedAt: toNullableFiniteNumber(entry?.finishedAt),
+  score:
+    typeof entry?.score === "number" && Number.isFinite(entry.score)
+      ? entry.score
+      : null,
+});
+
+const sanitizeStudentStatsRecord = (
+  stats: Partial<StudentStatsRecord> | null | undefined,
+): StudentStatsRecord => {
+  const rawAttempts =
+    stats?.attemptsBySessionId &&
+    typeof stats.attemptsBySessionId === "object" &&
+    !Array.isArray(stats.attemptsBySessionId)
+      ? stats.attemptsBySessionId
+      : {};
+
+  const attemptsBySessionId = Object.fromEntries(
+    Object.entries(rawAttempts).map(([sessionId, entry]) => [
+      sessionId,
+      sanitizeAttemptEntry(sessionId, entry),
+    ]),
+  );
+  const attemptsUsed = Math.min(
+    MAX_STUDENT_ATTEMPTS,
+    Math.max(
+      Object.keys(attemptsBySessionId).length,
+      toFiniteNumber(stats?.attemptsUsed, 0),
+    ),
+  );
+
+  return {
+    attemptsUsed,
+    maxAttempts: MAX_STUDENT_ATTEMPTS,
+    attemptsBySessionId,
+  };
+};
+
+const emptyAttemptSummary = (): StudentAttemptSummary => ({
+  attemptsUsed: 0,
+  attemptsRemaining: MAX_STUDENT_ATTEMPTS,
+  maxAttempts: MAX_STUDENT_ATTEMPTS,
+  isBlocked: false,
+  bestScore: null,
+  rankingPosition: null,
+  attemptHistory: [],
+});
+
+const buildStudentAttemptSummary = ({
+  stats,
+  leaderboard,
+  registration,
+}: {
+  stats: StudentStatsRecord | null;
+  leaderboard: BestScoreEntry[];
+  registration: string;
+}): StudentAttemptSummary => {
+  if (!registration) {
+    return emptyAttemptSummary();
+  }
+
+  const safeStats = sanitizeStudentStatsRecord(stats);
+  const attemptsUsed = Math.min(safeStats.attemptsUsed, MAX_STUDENT_ATTEMPTS);
+  const attemptHistory = Object.values(safeStats.attemptsBySessionId)
+    .sort(
+      (first, second) =>
+        first.attemptNumber - second.attemptNumber ||
+        first.startedAt - second.startedAt,
+    )
+    .slice(0, MAX_STUDENT_ATTEMPTS);
+  const bestEntry =
+    leaderboard.find((entry) => entry.registration === registration) ?? null;
+
+  return {
+    attemptsUsed,
+    attemptsRemaining: Math.max(0, MAX_STUDENT_ATTEMPTS - attemptsUsed),
+    maxAttempts: MAX_STUDENT_ATTEMPTS,
+    isBlocked: attemptsUsed >= MAX_STUDENT_ATTEMPTS,
+    bestScore: bestEntry?.score ?? null,
+    rankingPosition: bestEntry
+      ? leaderboard.findIndex((entry) => entry.registration === registration) + 1
+      : null,
+    attemptHistory,
+  };
+};
+
+export const getLeaderboard = async (filter: "all" | "student" = "student") => {
   const data = await dbGet<Record<string, BestScoreEntry>>(
-    resolveScorePath("bestScores")
+    resolveScorePath("bestScores"),
   );
 
   if (!data) {
@@ -141,7 +241,7 @@ export const getLeaderboard = async (filter: "all" | "student" = "all") => {
 
 export const getResultSnapshot = async (sessionId: string) => {
   const result = await dbGet<ResultSnapshot>(
-    resolveScorePath(`results/${sessionId}`)
+    resolveScorePath(`results/${sessionId}`),
   );
 
   if (result || !scoreNamespace) {
@@ -169,6 +269,186 @@ export const saveGameSession = async (session: GameSessionRecord) => {
 
 export const deleteGameSession = async (sessionId: string) => {
   await dbDelete(resolveScorePath(`gameSessions/${sessionId}`));
+};
+
+export const getStudentAttemptSummary = async (registration: string) => {
+  const normalizedRegistration = normalizeRegistration(registration);
+
+  if (!normalizedRegistration) {
+    return emptyAttemptSummary();
+  }
+
+  const [stats, leaderboard] = await Promise.all([
+    dbGet<StudentStatsRecord>(
+      resolveScorePath(`studentStats/${normalizedRegistration}`),
+    ),
+    getLeaderboard("student"),
+  ]);
+
+  return buildStudentAttemptSummary({
+    stats,
+    leaderboard,
+    registration: normalizedRegistration,
+  });
+};
+
+export const reserveStudentAttempt = async ({
+  registration,
+  sessionId,
+  startedAt = Date.now(),
+}: {
+  registration: string;
+  sessionId: string;
+  startedAt?: number;
+}) => {
+  const normalizedRegistration = normalizeRegistration(registration);
+
+  if (!normalizedRegistration) {
+    throw new Error("Matricula de aluno invalida.");
+  }
+
+  const statsRef = getDatabase().ref(
+    resolveScorePath(`studentStats/${normalizedRegistration}`),
+  );
+  let reservedAttempt: StudentAttemptEntry | null = null;
+
+  const transaction = await statsRef.transaction((currentValue) => {
+    const currentStats = sanitizeStudentStatsRecord(
+      currentValue as Partial<StudentStatsRecord> | null | undefined,
+    );
+
+    if (currentStats.attemptsUsed >= MAX_STUDENT_ATTEMPTS) {
+      return;
+    }
+
+    const existingAttempt = currentStats.attemptsBySessionId[sessionId];
+    if (existingAttempt) {
+      reservedAttempt = existingAttempt;
+      return currentStats;
+    }
+
+    reservedAttempt = {
+      sessionId,
+      attemptNumber: currentStats.attemptsUsed + 1,
+      startedAt,
+      finishedAt: null,
+      score: null,
+    };
+
+    return {
+      attemptsUsed: currentStats.attemptsUsed + 1,
+      maxAttempts: MAX_STUDENT_ATTEMPTS,
+      attemptsBySessionId: {
+        ...currentStats.attemptsBySessionId,
+        [sessionId]: reservedAttempt,
+      },
+    };
+  });
+
+  const summary = await getStudentAttemptSummary(normalizedRegistration);
+
+  if (!transaction.committed || !reservedAttempt) {
+    return {
+      reserved: false,
+      summary,
+      attempt: null,
+    };
+  }
+
+  return {
+    reserved: true,
+    summary,
+    attempt: reservedAttempt,
+  };
+};
+
+export const releaseReservedStudentAttempt = async ({
+  registration,
+  sessionId,
+}: {
+  registration: string;
+  sessionId: string;
+}) => {
+  const normalizedRegistration = normalizeRegistration(registration);
+
+  if (!normalizedRegistration) {
+    return;
+  }
+
+  const statsRef = getDatabase().ref(
+    resolveScorePath(`studentStats/${normalizedRegistration}`),
+  );
+
+  await statsRef.transaction((currentValue) => {
+    const currentStats = sanitizeStudentStatsRecord(
+      currentValue as Partial<StudentStatsRecord> | null | undefined,
+    );
+    const currentAttempt = currentStats.attemptsBySessionId[sessionId];
+
+    if (
+      !currentAttempt ||
+      currentAttempt.finishedAt !== null ||
+      currentAttempt.score !== null
+    ) {
+      return currentStats;
+    }
+
+    const nextAttempts = { ...currentStats.attemptsBySessionId };
+    delete nextAttempts[sessionId];
+
+    return {
+      attemptsUsed: Math.max(0, currentStats.attemptsUsed - 1),
+      maxAttempts: MAX_STUDENT_ATTEMPTS,
+      attemptsBySessionId: nextAttempts,
+    };
+  });
+};
+
+export const finalizeStudentAttempt = async ({
+  registration,
+  sessionId,
+  score,
+  finishedAt = Date.now(),
+}: {
+  registration: string;
+  sessionId: string;
+  score: number;
+  finishedAt?: number;
+}) => {
+  const normalizedRegistration = normalizeRegistration(registration);
+
+  if (!normalizedRegistration) {
+    return;
+  }
+
+  const safeScore = toFiniteNumber(score, 0);
+  const statsRef = getDatabase().ref(
+    resolveScorePath(`studentStats/${normalizedRegistration}`),
+  );
+
+  await statsRef.transaction((currentValue) => {
+    const currentStats = sanitizeStudentStatsRecord(
+      currentValue as Partial<StudentStatsRecord> | null | undefined,
+    );
+    const currentAttempt = currentStats.attemptsBySessionId[sessionId];
+
+    if (!currentAttempt) {
+      return currentStats;
+    }
+
+    return {
+      attemptsUsed: currentStats.attemptsUsed,
+      maxAttempts: MAX_STUDENT_ATTEMPTS,
+      attemptsBySessionId: {
+        ...currentStats.attemptsBySessionId,
+        [sessionId]: {
+          ...currentAttempt,
+          score: safeScore,
+          finishedAt,
+        },
+      },
+    };
+  });
 };
 
 export const persistResultSnapshot = async ({
@@ -200,7 +480,7 @@ export const persistResultSnapshot = async ({
   const shareUrl = `${origin}/resultado/${sessionId}`;
 
   const existingBest = await dbGet<BestScoreEntry>(
-    resolveScorePath(`bestScores/${normalizedRegistration}`)
+    resolveScorePath(`bestScores/${normalizedRegistration}`),
   );
   const isPersonalBest = shouldUpdateBestScore(existingBest, safeScore);
 
@@ -214,13 +494,11 @@ export const persistResultSnapshot = async ({
       sessionId,
     };
 
-    await dbSet(
-      resolveScorePath(`bestScores/${normalizedRegistration}`),
-      bestEntry
-    );
+    await dbSet(resolveScorePath(`bestScores/${normalizedRegistration}`), bestEntry);
   }
 
-  const leaderboard = await getLeaderboard("all");
+  const leaderboardFilter = playerType === "student" ? "student" : "all";
+  const leaderboard = await getLeaderboard(leaderboardFilter);
   const currentEntry = {
     registration: normalizedRegistration,
     studentName,

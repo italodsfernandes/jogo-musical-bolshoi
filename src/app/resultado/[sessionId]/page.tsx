@@ -54,7 +54,9 @@ export default async function ResultPage({ params }: ResultPageProps) {
   }
 
   // Calculate live position from current leaderboard
-  const leaderboard = await getLeaderboard("all");
+  const leaderboard = await getLeaderboard(
+    result.playerType === "student" ? "student" : "all",
+  );
   const livePosition = computeSessionPosition(leaderboard, {
     registration: result.registration,
     studentName: result.studentName,

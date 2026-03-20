@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getStudentAttemptSummary } from "@/lib/firebase";
 import { findStudentByRegistration } from "@/lib/students";
 
 interface RouteContext {
@@ -16,9 +17,12 @@ export async function GET(_: Request, context: RouteContext) {
     return NextResponse.json({ found: false });
   }
 
+  const summary = await getStudentAttemptSummary(student.registration);
+
   return NextResponse.json({
     found: true,
     registration: student.registration,
     name: student.name,
+    ...summary,
   });
 }

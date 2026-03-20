@@ -16,9 +16,10 @@ Experiência em `Next.js` para o Piano Day da Escola Bolshoi, com entrada por ma
 
 - Entrada via matrícula validada contra `src/data/students.json`
 - Confirmação do nome antes de entrar no jogo
+- Limite de 3 partidas por matrícula
 - Rodadas com score `500 + velocidade + combo`
 - Melhor score salvo por matrícula
-- Ranking público do evento
+- Ranking único apenas para alunos
 - Página pública de resultado por sessão
 - Card social gerado em `/resultado/[sessionId]/opengraph-image`
 
