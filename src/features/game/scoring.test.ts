@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateRoundBreakdown,
+  getScoreTitle,
   normalizeRegistration,
 } from "@/features/game/scoring";
 
@@ -130,5 +131,14 @@ describe("game scoring", () => {
       streakBonus: 0,
       total: 0,
     });
+  });
+
+  it("maps scores to the updated title tiers", () => {
+    expect(getScoreTitle(4_999)).toBe("Aprendiz das Teclas");
+    expect(getScoreTitle(5_000)).toBe("Destaque Musical");
+    expect(getScoreTitle(7_999)).toBe("Destaque Musical");
+    expect(getScoreTitle(8_000)).toBe("Virtuose em Ascensão");
+    expect(getScoreTitle(9_999)).toBe("Virtuose em Ascensão");
+    expect(getScoreTitle(10_000)).toBe("Estrela do Piano Day");
   });
 });

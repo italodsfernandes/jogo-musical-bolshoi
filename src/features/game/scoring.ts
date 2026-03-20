@@ -73,12 +73,16 @@ export const calculateRoundBreakdown = ({
 };
 
 export const getScoreTitle = (score: number) => {
-  if (score >= 8000) {
+  if (score >= 10000) {
     return "Estrela do Piano Day";
   }
 
-  if (score >= 5000) {
+  if (score >= 8000) {
     return "Virtuose em Ascensão";
+  }
+
+  if (score >= 5000) {
+    return "Destaque Musical";
   }
 
   return "Aprendiz das Teclas";

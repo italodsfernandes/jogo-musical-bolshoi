@@ -49,8 +49,9 @@ _(Q1: 900 + Q2: 1.000 + Q3–Q10: 1.100 × 8)_
 
 | Pontuação | Título |
 |---|---|
-| ≥ 8.000 | Estrela do Piano Day |
-| ≥ 5.000 | Virtuose em Ascensão |
+| ≥ 10.000 | Estrela do Piano Day |
+| ≥ 8.000 | Virtuose em Ascensão |
+| ≥ 5.000 | Destaque Musical |
 | < 5.000 | Aprendiz das Teclas |
 
 ## Scripts
