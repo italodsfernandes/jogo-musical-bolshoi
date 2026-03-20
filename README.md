@@ -66,13 +66,6 @@ npm run build
 ## Base de alunos
 
 - Fonte atual: `src/data/students.json`
-- Importação opcional de CSV:
-
-```bash
-npm run students:import -- ./students.csv
-```
-
-O CSV deve usar cabeçalhos `registration,name,active`.
 
 ## Áudios locais
 

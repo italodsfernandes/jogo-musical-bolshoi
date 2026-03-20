@@ -1,12 +1,1207 @@
 [
-  { "registration": "001", "name": "Jogador 1", "active": true },
-  { "registration": "002", "name": "Jogador 2", "active": true },
-  { "registration": "003", "name": "Jogador 3", "active": true },
-  { "registration": "004", "name": "Jogador 4", "active": true },
-  { "registration": "005", "name": "Jogador 5", "active": true },
-  { "registration": "006", "name": "Jogador 6", "active": true },
-  { "registration": "007", "name": "Jogador 7", "active": true },
-  { "registration": "008", "name": "Jogador 8", "active": true },
-  { "registration": "009", "name": "Jogador 9", "active": true },
-  { "registration": "010", "name": "Jogador 10", "active": true }
+  {
+    "registration": "001",
+    "name": "Aluno Teste 001",
+    "active": true
+  },
+  {
+    "registration": "002",
+    "name": "Aluno Teste 002",
+    "active": true
+  },
+  {
+    "registration": "003",
+    "name": "Aluno Teste 003",
+    "active": true
+  },
+  {
+    "registration": "5131",
+    "name": "Angelo Rafael Bernardino Nunes",
+    "active": true
+  },
+  {
+    "registration": "5110",
+    "name": "Bruno Locatelli da Luz",
+    "active": true
+  },
+  {
+    "registration": "6347",
+    "name": "Caio Mesquita Pracownik",
+    "active": true
+  },
+  {
+    "registration": "5521",
+    "name": "Cauã Vitor Gomes Nascimento",
+    "active": true
+  },
+  {
+    "registration": "6113",
+    "name": "Erick Possas Nery",
+    "active": true
+  },
+  {
+    "registration": "5159",
+    "name": "Joao Vitor Silva",
+    "active": true
+  },
+  {
+    "registration": "5113",
+    "name": "Lucas Alcântara da Mota Macedo",
+    "active": true
+  },
+  {
+    "registration": "5198",
+    "name": "Luiz Bottini Chabelmann",
+    "active": true
+  },
+  {
+    "registration": "4818",
+    "name": "Thaiwan Henrique Ferreira Gonçalves",
+    "active": true
+  },
+  {
+    "registration": "5678",
+    "name": "Vinicius Correa de Souza",
+    "active": true
+  },
+  {
+    "registration": "5895",
+    "name": "Aiyra Lima Spelta",
+    "active": true
+  },
+  {
+    "registration": "5173",
+    "name": "Ana Clara Oliveira Bilelo",
+    "active": true
+  },
+  {
+    "registration": "5125",
+    "name": "Clara de Almeida Amaral",
+    "active": true
+  },
+  {
+    "registration": "5104",
+    "name": "Gabriela Fernandez Borges",
+    "active": true
+  },
+  {
+    "registration": "4741",
+    "name": "Geovanna Lima Colzani",
+    "active": true
+  },
+  {
+    "registration": "4792",
+    "name": "Glenda Lynek Vasconcelos de Sousa",
+    "active": true
+  },
+  {
+    "registration": "5142",
+    "name": "Helena Rezende Vasques",
+    "active": true
+  },
+  {
+    "registration": "5576",
+    "name": "Isabella Helena de Souza",
+    "active": true
+  },
+  {
+    "registration": "5136",
+    "name": "Katarina Caçula de Moura",
+    "active": true
+  },
+  {
+    "registration": "5192",
+    "name": "Lais Matthiesen Correa",
+    "active": true
+  },
+  {
+    "registration": "5139",
+    "name": "Lydia Emygdio Fernandes",
+    "active": true
+  },
+  {
+    "registration": "5148",
+    "name": "Maria Eduarda Martins Leal",
+    "active": true
+  },
+  {
+    "registration": "6398",
+    "name": "Mariah Luiza do Rosário Wernay",
+    "active": true
+  },
+  {
+    "registration": "5172",
+    "name": "Mariana Mateus Firjam",
+    "active": true
+  },
+  {
+    "registration": "4841",
+    "name": "Natália Migdady",
+    "active": true
+  },
+  {
+    "registration": "5163",
+    "name": "Rayanne Manoela da Silva Nunes",
+    "active": true
+  },
+  {
+    "registration": "4717",
+    "name": "André Eduardo Santos Lara",
+    "active": true
+  },
+  {
+    "registration": "4863",
+    "name": "Arthur Jose Ferreira da Silva",
+    "active": true
+  },
+  {
+    "registration": "4811",
+    "name": "Bruno dos Santos Rodrigues",
+    "active": true
+  },
+  {
+    "registration": "4765",
+    "name": "Davi Freitas de Melo Novaes",
+    "active": true
+  },
+  {
+    "registration": "4565",
+    "name": "Enzo Jordy da Silva",
+    "active": true
+  },
+  {
+    "registration": "4478",
+    "name": "Gabriel Antonio Fraga Tamiozzo",
+    "active": true
+  },
+  {
+    "registration": "5779",
+    "name": "Guilherme Cauã Rodrigues de Lima",
+    "active": true
+  },
+  {
+    "registration": "5893",
+    "name": "Gustavo Rodrigues Fernandes",
+    "active": true
+  },
+  {
+    "registration": "5669",
+    "name": "João Pedro Serafim Masiero",
+    "active": true
+  },
+  {
+    "registration": "4619",
+    "name": "Keirison Henry Lima Dias",
+    "active": true
+  },
+  {
+    "registration": "4856",
+    "name": "Pedro Lucas dos Santos Miguel Raymundo",
+    "active": true
+  },
+  {
+    "registration": "4466",
+    "name": "Pietro da Silva Cruz",
+    "active": true
+  },
+  {
+    "registration": "4847",
+    "name": "Ruan Matos dos Santos",
+    "active": true
+  },
+  {
+    "registration": "4814",
+    "name": "Vinicius Matthies Lemos",
+    "active": true
+  },
+  {
+    "registration": "5717",
+    "name": "Catarina Isernhagen",
+    "active": true
+  },
+  {
+    "registration": "5920",
+    "name": "Fátima Lúcia Bodden Lam",
+    "active": true
+  },
+  {
+    "registration": "5145",
+    "name": "Isabella de França Dias",
+    "active": true
+  },
+  {
+    "registration": "4727",
+    "name": "Lavinya Velasco Pereira",
+    "active": true
+  },
+  {
+    "registration": "4830",
+    "name": "Lígia Conceição Pires",
+    "active": true
+  },
+  {
+    "registration": "4714",
+    "name": "Liz Igrejas Taranto Mezacasa",
+    "active": true
+  },
+  {
+    "registration": "4730",
+    "name": "Maria Laura Possato Garcia",
+    "active": true
+  },
+  {
+    "registration": "4759",
+    "name": "Nicolle Lourenço Cerrades",
+    "active": true
+  },
+  {
+    "registration": "5884",
+    "name": "Paz Schattenhofer",
+    "active": true
+  },
+  {
+    "registration": "6055",
+    "name": "Pietra Vitoria Barbosa Sanchez",
+    "active": true
+  },
+  {
+    "registration": "5887",
+    "name": "Sara Mayumi Nezzi Yamashita",
+    "active": true
+  },
+  {
+    "registration": "6269",
+    "name": "Sophia Perez Paladino",
+    "active": true
+  },
+  {
+    "registration": "4635",
+    "name": "Tamires Ribeiro Soares",
+    "active": true
+  },
+  {
+    "registration": "6164",
+    "name": "André Paulo Oliveira da Silva",
+    "active": true
+  },
+  {
+    "registration": "4571",
+    "name": "Caio Jullyano Monteiro de Araújo",
+    "active": true
+  },
+  {
+    "registration": "6107",
+    "name": "Celso Luciano Suárez Cardozo",
+    "active": true
+  },
+  {
+    "registration": "6110",
+    "name": "Gesnier Eliseu Pires de Souza",
+    "active": true
+  },
+  {
+    "registration": "6395",
+    "name": "Giuliano Quintas Silva",
+    "active": true
+  },
+  {
+    "registration": "4475",
+    "name": "João Tiago Francisqueto de Sousa",
+    "active": true
+  },
+  {
+    "registration": "4613",
+    "name": "Juan Ribeiro Santos",
+    "active": true
+  },
+  {
+    "registration": "4548",
+    "name": "Murilo de Moraes Silva",
+    "active": true
+  },
+  {
+    "registration": "4485",
+    "name": "Murilo Henrique de Oliveira",
+    "active": true
+  },
+  {
+    "registration": "5675",
+    "name": "Pedro Pereira de Sousa",
+    "active": true
+  },
+  {
+    "registration": "4517",
+    "name": "Vinícius Marques Saturnino",
+    "active": true
+  },
+  {
+    "registration": "4345",
+    "name": "Ana Clara Porto Figueredo",
+    "active": true
+  },
+  {
+    "registration": "5672",
+    "name": "Ana Maria Derrossi Bueno",
+    "active": true
+  },
+  {
+    "registration": "5869",
+    "name": "Beatriz Castanho Stori",
+    "active": true
+  },
+  {
+    "registration": "4595",
+    "name": "Giovanna Carvalho Bastos",
+    "active": true
+  },
+  {
+    "registration": "4472",
+    "name": "Heloisa Faustino Rodrigues",
+    "active": true
+  },
+  {
+    "registration": "5657",
+    "name": "Julia Badan Bianchi",
+    "active": true
+  },
+  {
+    "registration": "4962",
+    "name": "Karolina Fiuza Pereira",
+    "active": true
+  },
+  {
+    "registration": "4583",
+    "name": "Larissa Dudiman de Sá",
+    "active": true
+  },
+  {
+    "registration": "4482",
+    "name": "Liv Santos e Coronado",
+    "active": true
+  },
+  {
+    "registration": "4523",
+    "name": "Maitê dos Santos Borges",
+    "active": true
+  },
+  {
+    "registration": "4586",
+    "name": "Maria Eduarda Rocha Cordeiro dos Santos",
+    "active": true
+  },
+  {
+    "registration": "4798",
+    "name": "Maria Victória do Rosário Evangelista",
+    "active": true
+  },
+  {
+    "registration": "4587",
+    "name": "Mirela Amorim Leão",
+    "active": true
+  },
+  {
+    "registration": "4590",
+    "name": "Natália Pereira Maia",
+    "active": true
+  },
+  {
+    "registration": "4877",
+    "name": "Sophia Mota Simões",
+    "active": true
+  },
+  {
+    "registration": "6163",
+    "name": "Arthur Davi Favero",
+    "active": true
+  },
+  {
+    "registration": "6375",
+    "name": "Arthur Miguel Barbosa de Aguiar",
+    "active": true
+  },
+  {
+    "registration": "6401",
+    "name": "Daniel Viana do Monte",
+    "active": true
+  },
+  {
+    "registration": "6420",
+    "name": "Davi Silveira de Lima",
+    "active": true
+  },
+  {
+    "registration": "6426",
+    "name": "Emanuel Fernandes Estácio",
+    "active": true
+  },
+  {
+    "registration": "6243",
+    "name": "Gustavo Henrique Capistrano",
+    "active": true
+  },
+  {
+    "registration": "6409",
+    "name": "Higor Lagos Mercer Guimarães",
+    "active": true
+  },
+  {
+    "registration": "6199",
+    "name": "João Felipe Ferreira Soares da Costa",
+    "active": true
+  },
+  {
+    "registration": "6379",
+    "name": "João Pedro Bernardo de Oliveira da Silva",
+    "active": true
+  },
+  {
+    "registration": "6380",
+    "name": "Kaio Dornelas dos Santos",
+    "active": true
+  },
+  {
+    "registration": "6415",
+    "name": "Kristian da Silva Lourenço",
+    "active": true
+  },
+  {
+    "registration": "6344",
+    "name": "Lucas Corrêa Reis",
+    "active": true
+  },
+  {
+    "registration": "6342",
+    "name": "Luiz Miguel Inocente Lima",
+    "active": true
+  },
+  {
+    "registration": "6383",
+    "name": "Mikael Douglas Ferreira da Silva",
+    "active": true
+  },
+  {
+    "registration": "6441",
+    "name": "Pedro Henriky do Carmo Jek",
+    "active": true
+  },
+  {
+    "registration": "6385",
+    "name": "Robério Gabriel da Silva Manoel",
+    "active": true
+  },
+  {
+    "registration": "6417",
+    "name": "Victor Hugo Santana da Silva",
+    "active": true
+  },
+  {
+    "registration": "6429",
+    "name": "Alana Sodré Wisnesck",
+    "active": true
+  },
+  {
+    "registration": "6406",
+    "name": "Alice Castelo Ribeiro Gonçalves de Souza",
+    "active": true
+  },
+  {
+    "registration": "6221",
+    "name": "Amábile Todt Tomé",
+    "active": true
+  },
+  {
+    "registration": "6218",
+    "name": "Ana Clara de Moura Marques Peixoto",
+    "active": true
+  },
+  {
+    "registration": "6364",
+    "name": "Beatriz Cavalcante Freitas",
+    "active": true
+  },
+  {
+    "registration": "6412",
+    "name": "Clarice Moura de Paiva",
+    "active": true
+  },
+  {
+    "registration": "6362",
+    "name": "Isadora Furtado de Andrade",
+    "active": true
+  },
+  {
+    "registration": "6435",
+    "name": "Laura Vassoler Martins",
+    "active": true
+  },
+  {
+    "registration": "6432",
+    "name": "Lis Missagia Serpa Sandrini",
+    "active": true
+  },
+  {
+    "registration": "6372",
+    "name": "Lívia Scheffel Monteiro",
+    "active": true
+  },
+  {
+    "registration": "6423",
+    "name": "Maria Eduarda Pastana Quaresma",
+    "active": true
+  },
+  {
+    "registration": "6403",
+    "name": "Marina Nascimento Ferret",
+    "active": true
+  },
+  {
+    "registration": "6356",
+    "name": "Maya Fogliatto Bulé",
+    "active": true
+  },
+  {
+    "registration": "6438",
+    "name": "Maya Franco Barbosa",
+    "active": true
+  },
+  {
+    "registration": "6367",
+    "name": "Sarah Vieira Dutra",
+    "active": true
+  },
+  {
+    "registration": "6370",
+    "name": "Sofia de Sousa dos Santos",
+    "active": true
+  },
+  {
+    "registration": "6219",
+    "name": "Sofia Ramos Santos",
+    "active": true
+  },
+  {
+    "registration": "6444",
+    "name": "Zoe Kendall Bailon Minaya",
+    "active": true
+  },
+  {
+    "registration": "6143",
+    "name": "Arthur Leivy Santos de Carvalho",
+    "active": true
+  },
+  {
+    "registration": "6147",
+    "name": "Cauã Freitas Nossa",
+    "active": true
+  },
+  {
+    "registration": "6202",
+    "name": "Davi Lucca Schmitz Bernardo",
+    "active": true
+  },
+  {
+    "registration": "6033",
+    "name": "Davi Luiz da Silva",
+    "active": true
+  },
+  {
+    "registration": "6264",
+    "name": "Gabriel Fabrício Florêncio dos Santos",
+    "active": true
+  },
+  {
+    "registration": "6130",
+    "name": "Gael Medeiros Mamede Furtado",
+    "active": true
+  },
+  {
+    "registration": "6266",
+    "name": "George Nascimento de Castro",
+    "active": true
+  },
+  {
+    "registration": "6036",
+    "name": "Henrique Paulino de Souza",
+    "active": true
+  },
+  {
+    "registration": "6120",
+    "name": "Hiago Rosa Silveira",
+    "active": true
+  },
+  {
+    "registration": "6268",
+    "name": "Isaac Damaceno Lima",
+    "active": true
+  },
+  {
+    "registration": "6261",
+    "name": "Jean Lucca Vieira da Cruz",
+    "active": true
+  },
+  {
+    "registration": "6265",
+    "name": "Joaquim da Silva Pereira",
+    "active": true
+  },
+  {
+    "registration": "6255",
+    "name": "Neemias dos Santos de Jesus",
+    "active": true
+  },
+  {
+    "registration": "6184",
+    "name": "Paulo Mariano Carvalho Aguiar da Silva",
+    "active": true
+  },
+  {
+    "registration": "6154",
+    "name": "Rafael Moreno Rodrigues",
+    "active": true
+  },
+  {
+    "registration": "6267",
+    "name": "Rhael Nicolas Guimarães Simon",
+    "active": true
+  },
+  {
+    "registration": "6124",
+    "name": "Silvio Eduardh Moreira Maciel",
+    "active": true
+  },
+  {
+    "registration": "6191",
+    "name": "Vicenzo Oliveira Pessoa da Silva",
+    "active": true
+  },
+  {
+    "registration": "5687",
+    "name": "Agatha Sophia Loureiro Trindade",
+    "active": true
+  },
+  {
+    "registration": "6175",
+    "name": "Alice Campos Pereira",
+    "active": true
+  },
+  {
+    "registration": "6139",
+    "name": "Alice Evangeline Bezerra do Nascimento",
+    "active": true
+  },
+  {
+    "registration": "5951",
+    "name": "Alicy Maas Fraga",
+    "active": true
+  },
+  {
+    "registration": "6172",
+    "name": "Ana Júlia de Abreu Barbosa",
+    "active": true
+  },
+  {
+    "registration": "6024",
+    "name": "Andressa dos Santos",
+    "active": true
+  },
+  {
+    "registration": "6117",
+    "name": "Anita Felix Passos Rangel",
+    "active": true
+  },
+  {
+    "registration": "6133",
+    "name": "Brenda Andrade Pereira",
+    "active": true
+  },
+  {
+    "registration": "5732",
+    "name": "Brenda Aparecida da Silva Rojanski",
+    "active": true
+  },
+  {
+    "registration": "6127",
+    "name": "Giovanna Simão Mundim",
+    "active": true
+  },
+  {
+    "registration": "6027",
+    "name": "Kauany de Lima",
+    "active": true
+  },
+  {
+    "registration": "6166",
+    "name": "Lara Rodrigues Ribeiro",
+    "active": true
+  },
+  {
+    "registration": "6252",
+    "name": "Luiza Gomes Campelo Pereira",
+    "active": true
+  },
+  {
+    "registration": "6190",
+    "name": "Maria Eduarda Zamparetti Semonetti",
+    "active": true
+  },
+  {
+    "registration": "6178",
+    "name": "Maria Júlia Casanova Lopes",
+    "active": true
+  },
+  {
+    "registration": "6136",
+    "name": "Maria Lucia Lopes Sai",
+    "active": true
+  },
+  {
+    "registration": "6146",
+    "name": "Nataly Ribeiro Pereira Concer",
+    "active": true
+  },
+  {
+    "registration": "6003",
+    "name": "Antonio Carlos Nascimento Trindade",
+    "active": true
+  },
+  {
+    "registration": "5936",
+    "name": "Bernard Coelho de Azevedo",
+    "active": true
+  },
+  {
+    "registration": "5937",
+    "name": "Davi Gabriel Ferreira Felix",
+    "active": true
+  },
+  {
+    "registration": "5917",
+    "name": "Enzo Lamim Nichele",
+    "active": true
+  },
+  {
+    "registration": "5975",
+    "name": "Humberto Gabriel Matos Machado",
+    "active": true
+  },
+  {
+    "registration": "6061",
+    "name": "Khaique Manoel Amorim Cardozo das Chagas",
+    "active": true
+  },
+  {
+    "registration": "6065",
+    "name": "Lelouch Fernandes Barbosa",
+    "active": true
+  },
+  {
+    "registration": "5954",
+    "name": "Leo Joaquim de Lima Ewald",
+    "active": true
+  },
+  {
+    "registration": "5990",
+    "name": "Lorenzo Pinheiro Alvarenga",
+    "active": true
+  },
+  {
+    "registration": "5945",
+    "name": "Lucas Gilardi",
+    "active": true
+  },
+  {
+    "registration": "6350",
+    "name": "Matheus Alonso Macedo",
+    "active": true
+  },
+  {
+    "registration": "6007",
+    "name": "Matheus Invernizzi de Souza",
+    "active": true
+  },
+  {
+    "registration": "5958",
+    "name": "Murilo da Silva de Araujo",
+    "active": true
+  },
+  {
+    "registration": "5986",
+    "name": "Pedro Henryk Silva de Oliveira",
+    "active": true
+  },
+  {
+    "registration": "6066",
+    "name": "Rafael Renan Alves Evangelista",
+    "active": true
+  },
+  {
+    "registration": "6067",
+    "name": "Wellington Almeida Coelho de Araújo",
+    "active": true
+  },
+  {
+    "registration": "6016",
+    "name": "Amanda Possato Garcia",
+    "active": true
+  },
+  {
+    "registration": "5969",
+    "name": "Ana Lívia de Albuquerque Nascimento",
+    "active": true
+  },
+  {
+    "registration": "6069",
+    "name": "Carolina Franco Bianchi de Carvalho",
+    "active": true
+  },
+  {
+    "registration": "5928",
+    "name": "Cecilia Maria Alves Silva",
+    "active": true
+  },
+  {
+    "registration": "5983",
+    "name": "Eloa Macruz Rodrigues",
+    "active": true
+  },
+  {
+    "registration": "6042",
+    "name": "Giovana Agra Prebianca",
+    "active": true
+  },
+  {
+    "registration": "5938",
+    "name": "Hillary Gomes da Silva Drumond",
+    "active": true
+  },
+  {
+    "registration": "6000",
+    "name": "Isabela Penha Giacometti Lopes",
+    "active": true
+  },
+  {
+    "registration": "6450",
+    "name": "Isabella Buela Garrido",
+    "active": true
+  },
+  {
+    "registration": "5906",
+    "name": "Isabella Moraes Gomes",
+    "active": true
+  },
+  {
+    "registration": "6181",
+    "name": "Juliana Di Celio Mendes",
+    "active": true
+  },
+  {
+    "registration": "6071",
+    "name": "Laura Barretto Messias da Silva",
+    "active": true
+  },
+  {
+    "registration": "6050",
+    "name": "Lina Faiçal Dallal",
+    "active": true
+  },
+  {
+    "registration": "6015",
+    "name": "Manuela Monteiro Cardoso",
+    "active": true
+  },
+  {
+    "registration": "6282",
+    "name": "Marina Melo Machado de Souza",
+    "active": true
+  },
+  {
+    "registration": "6058",
+    "name": "Melissa Barbosa Karakawa",
+    "active": true
+  },
+  {
+    "registration": "5903",
+    "name": "Melissa Dullberg Ornelas",
+    "active": true
+  },
+  {
+    "registration": "5740",
+    "name": "Vitória Ferreira Fernandes",
+    "active": true
+  },
+  {
+    "registration": "5829",
+    "name": "Abraão Gabriel Araújo da Silva",
+    "active": true
+  },
+  {
+    "registration": "5811",
+    "name": "Adryan Ramos Machado Taborda",
+    "active": true
+  },
+  {
+    "registration": "5830",
+    "name": "Dayenew Rik dos Santos",
+    "active": true
+  },
+  {
+    "registration": "5831",
+    "name": "Dayvid Lucca Aguiar Medeiros",
+    "active": true
+  },
+  {
+    "registration": "5796",
+    "name": "Diego Henrique Quintiliano Brito",
+    "active": true
+  },
+  {
+    "registration": "5758",
+    "name": "Gabriel Fernandes Karsten",
+    "active": true
+  },
+  {
+    "registration": "5790",
+    "name": "Hentony Eduardo Mourão dos Santos",
+    "active": true
+  },
+  {
+    "registration": "6142",
+    "name": "Icaro Larchert de Farias",
+    "active": true
+  },
+  {
+    "registration": "5851",
+    "name": "José Edson Oliveira da Silva",
+    "active": true
+  },
+  {
+    "registration": "5802",
+    "name": "Leonardo de Melo",
+    "active": true
+  },
+  {
+    "registration": "5832",
+    "name": "Miguel Augusto Ferreira dos Santos",
+    "active": true
+  },
+  {
+    "registration": "5833",
+    "name": "Nathanael Augusto Ferreira dos Santos",
+    "active": true
+  },
+  {
+    "registration": "5834",
+    "name": "Nicolas Keviny da Silva Bernardino",
+    "active": true
+  },
+  {
+    "registration": "6353",
+    "name": "Pedro Ryan de Castro",
+    "active": true
+  },
+  {
+    "registration": "5854",
+    "name": "Alessandra Vitória Costa das Chagas",
+    "active": true
+  },
+  {
+    "registration": "5723",
+    "name": "Alice de Carvalho Moreira",
+    "active": true
+  },
+  {
+    "registration": "5793",
+    "name": "Alice Engel",
+    "active": true
+  },
+  {
+    "registration": "5711",
+    "name": "Ana Luiza de Oliveira Zampolli",
+    "active": true
+  },
+  {
+    "registration": "6047",
+    "name": "Anna Lia Queiroz Medeiros",
+    "active": true
+  },
+  {
+    "registration": "5736",
+    "name": "Elisa Dias Moreira de Sousa Neves",
+    "active": true
+  },
+  {
+    "registration": "5737",
+    "name": "Emilaine Braz de Oliveira Betarelli",
+    "active": true
+  },
+  {
+    "registration": "5701",
+    "name": "Giulia de Oliveira Lourenço",
+    "active": true
+  },
+  {
+    "registration": "5827",
+    "name": "Isabelly Nálija Nascimento de Alcântara",
+    "active": true
+  },
+  {
+    "registration": "5805",
+    "name": "Jamilly da Silva",
+    "active": true
+  },
+  {
+    "registration": "5738",
+    "name": "Leticia Souza da Silva",
+    "active": true
+  },
+  {
+    "registration": "5714",
+    "name": "Livia Leite Mendes Morais",
+    "active": true
+  },
+  {
+    "registration": "6359",
+    "name": "Luiza Soares Lima",
+    "active": true
+  },
+  {
+    "registration": "5828",
+    "name": "Marcelly Mel de Lima Vaz",
+    "active": true
+  },
+  {
+    "registration": "5612",
+    "name": "Maria Clara de Almeida Niehues",
+    "active": true
+  },
+  {
+    "registration": "5776",
+    "name": "Mariana Pinheiro Rezende",
+    "active": true
+  },
+  {
+    "registration": "5781",
+    "name": "Rafaela Lethicia Dias",
+    "active": true
+  },
+  {
+    "registration": "5894",
+    "name": "Brenno Souza Oliveira",
+    "active": true
+  },
+  {
+    "registration": "5587",
+    "name": "Calebe da Silva Carneiro",
+    "active": true
+  },
+  {
+    "registration": "5621",
+    "name": "Carlos Eduardo Alves de Lima",
+    "active": true
+  },
+  {
+    "registration": "6249",
+    "name": "João Pedro Alencastro",
+    "active": true
+  },
+  {
+    "registration": "5619",
+    "name": "Kaio Gabriel Basilio da Luz",
+    "active": true
+  },
+  {
+    "registration": "5544",
+    "name": "Leonardo Novaes Munhoz",
+    "active": true
+  },
+  {
+    "registration": "5550",
+    "name": "Luan Gabriel da Cruz",
+    "active": true
+  },
+  {
+    "registration": "6100",
+    "name": "Matias Calebe Morais Gonçalves",
+    "active": true
+  },
+  {
+    "registration": "5586",
+    "name": "Natan Samuel Azevedo Fernandes",
+    "active": true
+  },
+  {
+    "registration": "5563",
+    "name": "Pedro Victor Periald de Souza Lima",
+    "active": true
+  },
+  {
+    "registration": "5547",
+    "name": "Amanda Honória Guibo",
+    "active": true
+  },
+  {
+    "registration": "5923",
+    "name": "Ana Carolina Facundo Gurgel",
+    "active": true
+  },
+  {
+    "registration": "5870",
+    "name": "Ana Julya Sobral Paiva",
+    "active": true
+  },
+  {
+    "registration": "5896",
+    "name": "Antonella Bichara Vitor de Oliveira",
+    "active": true
+  },
+  {
+    "registration": "5605",
+    "name": "Claudia Maria de Lima Graf Fernandes",
+    "active": true
+  },
+  {
+    "registration": "5577",
+    "name": "Giovanna Antonella Braun",
+    "active": true
+  },
+  {
+    "registration": "5892",
+    "name": "Helena Marchi Ramos",
+    "active": true
+  },
+  {
+    "registration": "5559",
+    "name": "Hillary Leite Ribeiro",
+    "active": true
+  },
+  {
+    "registration": "5877",
+    "name": "Isabella Newar Sá",
+    "active": true
+  },
+  {
+    "registration": "5541",
+    "name": "Jenyffer Laura Azevedo de Almeida",
+    "active": true
+  },
+  {
+    "registration": "5553",
+    "name": "Julia Oliveira Santos",
+    "active": true
+  },
+  {
+    "registration": "5556",
+    "name": "Lays Barbosa da Silva",
+    "active": true
+  },
+  {
+    "registration": "5611",
+    "name": "Rayssa da Silva Pereira",
+    "active": true
+  },
+  {
+    "registration": "5584",
+    "name": "Yasmin Santos de Figueiredo",
+    "active": true
+  }
 ]

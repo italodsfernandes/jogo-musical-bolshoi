@@ -8,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run",
-    "students:import": "node scripts/import-students.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.0",
