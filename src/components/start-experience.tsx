@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLinkIcon, LoaderCircleIcon, TrophyIcon } from "lucide-react";
+import { LoaderCircleIcon, TrophyIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
@@ -384,18 +384,15 @@ export const StartExperience = ({
                       <Link
                         key={attempt.sessionId}
                         href={`/resultado/${attempt.sessionId}`}
-                        className="rounded-2xl border border-[rgba(18,33,34,0.08)] bg-white/60 px-4 py-3 transition-all hover:border-[rgba(18,33,34,0.2)] hover:bg-white hover:shadow-md"
+                        className="block rounded-2xl border border-[rgba(18,33,34,0.08)] bg-white/60 px-4 py-3 transition-colors hover:bg-white/80"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-[hsl(var(--primary))]">
                             Tentativa {attempt.attemptNumber}
                           </p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold text-[hsl(var(--accent))]">
-                              {attempt.score ?? "Nao concluida"}
-                            </p>
-                            <ExternalLinkIcon className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
-                          </div>
+                          <p className="text-sm font-bold text-[hsl(var(--accent))]">
+                            {attempt.score ?? "Nao concluida"}
+                          </p>
                         </div>
                         <p className="mt-1 text-xs text-[rgba(18,33,34,0.55)]">
                           Iniciada em {formatAttemptDate(attempt.startedAt)}
