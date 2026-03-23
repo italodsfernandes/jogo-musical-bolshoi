@@ -2,17 +2,17 @@
   {
     "registration": "001",
     "name": "Aluno Teste 001",
-    "active": true
+    "active": false
   },
   {
     "registration": "002",
     "name": "Aluno Teste 002",
-    "active": true
+    "active": false
   },
   {
     "registration": "003",
     "name": "Aluno Teste 003",
-    "active": true
+    "active": false
   },
   {
     "registration": "5131",
