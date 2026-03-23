@@ -1,8 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { LoaderCircleIcon, TrophyIcon } from "lucide-react";
+import { ExternalLinkIcon, LoaderCircleIcon, TrophyIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -84,9 +85,8 @@ export const StartExperience = ({
         }
       : null,
   );
-  const [attemptSummary, setAttemptSummary] = useState<StudentAttemptSummary>(
-    createEmptySummary(),
-  );
+  const [attemptSummary, setAttemptSummary] =
+    useState<StudentAttemptSummary>(createEmptySummary());
   const [summaryRegistration, setSummaryRegistration] = useState<string | null>(
     null,
   );
@@ -235,9 +235,9 @@ export const StartExperience = ({
         }
 
         if (!response.ok) {
-          const errorPayload = (await response.json().catch(() => null)) as
-            | { message?: string }
-            | null;
+          const errorPayload = (await response.json().catch(() => null)) as {
+            message?: string;
+          } | null;
 
           throw new Error(
             errorPayload?.message ?? "Nao foi possivel iniciar o jogo.",
@@ -253,7 +253,8 @@ export const StartExperience = ({
             currentSummary.attemptsUsed + 1,
           ),
           attemptsRemaining: Math.max(0, currentSummary.attemptsRemaining - 1),
-          isBlocked: currentSummary.attemptsUsed + 1 >= currentSummary.maxAttempts,
+          isBlocked:
+            currentSummary.attemptsUsed + 1 >= currentSummary.maxAttempts,
         }));
         router.push("/game");
       } catch (error) {
@@ -380,17 +381,21 @@ export const StartExperience = ({
                       Suas 3 jogadas
                     </p>
                     {attemptSummary.attemptHistory.map((attempt) => (
-                      <div
+                      <Link
                         key={attempt.sessionId}
-                        className="rounded-2xl border border-[rgba(18,33,34,0.08)] bg-white/60 px-4 py-3"
+                        href={`/resultado/${attempt.sessionId}`}
+                        className="rounded-2xl border border-[rgba(18,33,34,0.08)] bg-white/60 px-4 py-3 transition-all hover:border-[rgba(18,33,34,0.2)] hover:bg-white hover:shadow-md"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-[hsl(var(--primary))]">
                             Tentativa {attempt.attemptNumber}
                           </p>
-                          <p className="text-sm font-bold text-[hsl(var(--accent))]">
-                            {attempt.score ?? "Nao concluida"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-[hsl(var(--accent))]">
+                              {attempt.score ?? "Nao concluida"}
+                            </p>
+                            <ExternalLinkIcon className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                          </div>
                         </div>
                         <p className="mt-1 text-xs text-[rgba(18,33,34,0.55)]">
                           Iniciada em {formatAttemptDate(attempt.startedAt)}
@@ -398,7 +403,7 @@ export const StartExperience = ({
                         <p className="mt-1 text-xs text-[rgba(18,33,34,0.55)]">
                           Finalizada em {formatAttemptDate(attempt.finishedAt)}
                         </p>
-                      </div>
+                      </Link>
                     ))}
                   </div>
 
