@@ -168,11 +168,6 @@ export default async function AuditPage() {
                           </div>
 
                           <div className="flex items-end justify-between gap-3 md:col-span-3 xl:col-span-1 xl:justify-end">
-                            <div className="text-sm text-[rgba(255,248,230,0.68)] xl:text-right">
-                              {row.attemptHistory.length === 0
-                                ? "Sem tentativas"
-                                : `${row.attemptHistory.length} registro${row.attemptHistory.length > 1 ? "s" : ""}`}
-                            </div>
                             <span className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[rgba(176,148,90,0.22)] bg-[rgba(176,148,90,0.08)] px-4 text-sm font-semibold text-[hsl(var(--accent))] whitespace-nowrap">
                               <TrophyIcon className="h-4 w-4" />
                               Histórico
