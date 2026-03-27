@@ -26,3 +26,5 @@ export const findStudentByRegistration = (registration: string) => {
 
   return student;
 };
+
+export const getAllStudents = () => Array.from(STUDENT_MAP.values());

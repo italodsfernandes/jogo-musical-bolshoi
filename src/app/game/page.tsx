@@ -1,5 +1,8 @@
-import { GameArena } from "@/components/game-arena";
+import { GamePageGate } from "@/components/game-page-gate";
+import { isGameClosed } from "@/lib/site";
+
+export const dynamic = "force-dynamic";
 
 export default function GamePage() {
-  return <GameArena />;
+  return <GamePageGate initialClosed={isGameClosed()} />;
 }

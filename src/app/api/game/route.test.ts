@@ -13,6 +13,7 @@ const {
   reserveStudentAttemptMock,
   saveGameSessionMock,
   submitAnswerForSessionMock,
+  isGameClosedMock,
 } = vi.hoisted(() => ({
   createGameSessionMock: vi.fn(),
   createNextRoundForSessionMock: vi.fn(),
@@ -26,6 +27,7 @@ const {
   reserveStudentAttemptMock: vi.fn(),
   saveGameSessionMock: vi.fn(),
   submitAnswerForSessionMock: vi.fn(),
+  isGameClosedMock: vi.fn(),
 }));
 
 vi.mock("@/features/game/session", () => ({
@@ -59,6 +61,10 @@ vi.mock("@/lib/students", () => ({
   findStudentByRegistration: findStudentByRegistrationMock,
 }));
 
+vi.mock("@/lib/site", () => ({
+  isGameClosed: isGameClosedMock,
+}));
+
 import { POST } from "@/app/api/game/route";
 
 describe("game route", () => {
@@ -75,11 +81,13 @@ describe("game route", () => {
     reserveStudentAttemptMock.mockReset();
     saveGameSessionMock.mockReset();
     submitAnswerForSessionMock.mockReset();
+    isGameClosedMock.mockReset();
 
     createSessionIdMock.mockReturnValue("session-1");
     saveGameSessionMock.mockResolvedValue(undefined);
     releaseReservedStudentAttemptMock.mockResolvedValue(undefined);
     finalizeStudentAttemptMock.mockResolvedValue(undefined);
+    isGameClosedMock.mockReturnValue(false);
   });
 
   it("creates a student session when one attempt is available", async () => {
@@ -225,6 +233,28 @@ describe("game route", () => {
     });
     expect(createGameSessionMock).not.toHaveBeenCalled();
     expect(saveGameSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks new starts after the cutoff time", async () => {
+    isGameClosedMock.mockReturnValue(true);
+
+    const response = await POST(
+      new Request("http://localhost/api/game", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "start",
+          registration: "001",
+          playerType: "student",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "game_closed",
+    });
+    expect(findStudentByRegistrationMock).not.toHaveBeenCalled();
+    expect(reserveStudentAttemptMock).not.toHaveBeenCalled();
   });
 
   it("finalizes the reserved attempt when the last answer finishes the game", async () => {

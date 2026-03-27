@@ -19,7 +19,7 @@ import {
   StudentAttemptSummary,
   StudentLookupResponse,
 } from "@/features/game/types";
-import { BOLSHOI_LOGO_URL } from "@/lib/site";
+import { BOLSHOI_LOGO_URL, GAME_CUTOFF, isGameClosed } from "@/lib/site";
 
 const formatAttemptDate = (value: number | null) => {
   if (!value) {
@@ -65,8 +65,10 @@ const extractSummary = (
 
 export const StartExperience = ({
   initialRegistration,
+  initialClosed = false,
 }: {
   initialRegistration: string;
+  initialClosed?: boolean;
 }) => {
   const router = useRouter();
   const {
@@ -94,6 +96,28 @@ export const StartExperience = ({
   const [isSearching, setIsSearching] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [errorShake, setErrorShake] = useState(0);
+  const [gameClosed, setGameClosed] = useState(initialClosed || isGameClosed());
+
+  useEffect(() => {
+    if (gameClosed) {
+      return;
+    }
+
+    const remainingMs = GAME_CUTOFF - Date.now();
+
+    if (remainingMs <= 0) {
+      setGameClosed(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setGameClosed(true);
+    }, remainingMs);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [gameClosed]);
 
   useEffect(() => {
     if (!initialRegistration || player) {
@@ -234,6 +258,17 @@ export const StartExperience = ({
           return;
         }
 
+        if (response.status === 403) {
+          const errorPayload = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+
+          if (errorPayload?.error === "game_closed") {
+            setGameClosed(true);
+            return;
+          }
+        }
+
         if (!response.ok) {
           const errorPayload = (await response.json().catch(() => null)) as {
             message?: string;
@@ -269,6 +304,53 @@ export const StartExperience = ({
       }
     })();
   };
+
+  if (gameClosed) {
+    return (
+      <main className="page-frame page-frame--stage game-surface page-enter">
+        <div
+          className="floating-notes floating-notes--bright"
+          aria-hidden="true"
+        >
+          {FLOATING_NOTES.map((note, index) => (
+            <span
+              key={index}
+              className={note.className}
+              style={{ animationDelay: `${note.delay}s` }}
+            >
+              {note.char}
+            </span>
+          ))}
+        </div>
+
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
+          <div className="rounded-2xl border border-[rgba(176,148,90,0.3)] bg-white/90 p-3 shadow-lg">
+            <Image
+              alt="Escola do Teatro Bolshoi no Brasil"
+              src={BOLSHOI_LOGO_URL}
+              width={64}
+              height={64}
+              className="h-14 w-14 object-contain"
+              priority
+            />
+          </div>
+
+          <div className="mt-6 max-w-md rounded-[28px] border border-[rgba(255,248,230,0.16)] bg-[rgba(4,34,35,0.44)] px-6 py-8 shadow-[0_24px_60px_rgba(0,0,0,0.28)] backdrop-blur-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(255,248,230,0.58)]">
+              Piano Day
+            </p>
+            <h1 className="mt-3 text-[clamp(2.2rem,10vw,3.4rem)] font-bold leading-[0.96] tracking-tight text-[hsl(var(--ivory))]">
+              Jogo encerrado
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-[rgba(255,248,230,0.8)]">
+              As novas partidas foram encerradas. Obrigado por participar do
+              MusiQuiz Piano Day.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page-frame page-frame--stage game-surface page-enter">

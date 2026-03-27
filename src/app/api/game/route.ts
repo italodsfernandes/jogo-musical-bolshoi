@@ -18,6 +18,7 @@ import {
   reserveStudentAttempt,
   saveGameSession,
 } from "@/lib/firebase";
+import { isGameClosed } from "@/lib/site";
 import { findStudentByRegistration } from "@/lib/students";
 
 const isValidCurrentRound = (value: unknown): value is number =>
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
     };
 
     if (payload.action === "start") {
+      if (isGameClosed()) {
+        return NextResponse.json({ error: "game_closed" }, { status: 403 });
+      }
+
       if (payload.playerType !== "student") {
         return NextResponse.json(
           { message: "Apenas alunos podem jogar." },

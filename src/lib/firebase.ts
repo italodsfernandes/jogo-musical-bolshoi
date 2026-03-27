@@ -292,6 +292,23 @@ export const getStudentAttemptSummary = async (registration: string) => {
   });
 };
 
+export const getAllStudentStats = async () => {
+  const data = await dbGet<Record<string, StudentStatsRecord>>(
+    resolveScorePath("studentStats"),
+  );
+
+  if (!data) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(data).map(([registration, stats]) => [
+      normalizeRegistration(registration),
+      sanitizeStudentStatsRecord(stats),
+    ]),
+  );
+};
+
 export const reserveStudentAttempt = async ({
   registration,
   sessionId,
